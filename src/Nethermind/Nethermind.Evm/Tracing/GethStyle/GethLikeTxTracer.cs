@@ -16,12 +16,17 @@ namespace Nethermind.Evm.Tracing.GethStyle
     {
         private GethTxTraceEntry? _traceEntry;
         private readonly GethLikeTxTrace _trace = new();
+        private readonly List<Func<GethCustomTracers>> _customTracers = new List<Func<GethCustomTracers>>();
+        // private readonly Func<Transaction, GethCustomTracers, List<string>> _customTracerFunc;
 
-        public GethLikeTxTracer(GethTraceOptions options)
+        public GethLikeTxTracer(GethTraceOptions options,params Func<GethCustomTracers>[] customTracers )
+            // Func<Transaction, GethCustomTracers, List<string>> customTracerFunc = null
         {
             IsTracingStack = !options.DisableStack;
             IsTracingMemory = !options.DisableMemory;
             IsTracingOpLevelStorage = !options.DisableStorage;
+            _customTracers.AddRange(customTracers);
+            //Tracers = options.Tracer ?? DefaultTracers; // Use default if options.Tracer is null
         }
 
         public sealed override bool IsTracingOpLevelStorage { get; protected set; }
@@ -29,6 +34,10 @@ namespace Nethermind.Evm.Tracing.GethStyle
         public sealed override bool IsTracingMemory { get; protected set; }
         public override bool IsTracingInstructions => true;
         public sealed override bool IsTracingStack { get; protected set; }
+        // Default value for Tracers
+        // private static readonly string DefaultTracers = null;
+
+        // public string Tracers { get; private set; }
 
         public override void MarkAsSuccess(Address recipient, long gasSpent, byte[] output, LogEntry[] logs, Keccak? stateRoot = null)
         {
@@ -77,6 +86,11 @@ namespace Nethermind.Evm.Tracing.GethStyle
 
                 _traceEntry.Storage = new Dictionary<string, string>(previousTraceEntry.Storage!);
             }
+            // if (_customTracerFunc != null && _traceEntry != null)
+            // {
+            //     List<string> customTracerResult = _customTracerFunc(_transaction, new GethCustomTracers());
+            //     _traceEntry.CustomTracerResults = customTracerResult;
+            // }
         }
 
         public override void ReportOperationError(EvmExceptionType error)
@@ -131,7 +145,22 @@ namespace Nethermind.Evm.Tracing.GethStyle
 
         public GethLikeTxTrace BuildResult()
         {
-            return _trace;
+            GethLikeTxTrace traceResult = _trace;
+
+            // Invoke custom tracers and update traceResult
+            foreach (var customTracerFunc in _customTracers)
+            {
+                GethCustomTracers customTracer = customTracerFunc();
+                if (customTracer != null && _traceEntry != null)
+                {
+                    customTracer.Step(_traceEntry, null);
+                    customTracer.Fault(_traceEntry, null);
+                    List<string> customTracerResult = customTracer.Result(_traceEntry, null);
+                    // Handle the custom tracer results as needed
+                }
+            }
+
+            return traceResult;
         }
     }
 }

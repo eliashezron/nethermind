@@ -16,6 +16,7 @@ using Nethermind.JsonRpc.Data;
 using Nethermind.Logging;
 using Nethermind.Serialization.Rlp;
 using Nethermind.Synchronization.Reporting;
+using Nethermind.Evm.Tracing.JavascriptTracer;
 
 namespace Nethermind.JsonRpc.Modules.DebugModule
 {
@@ -51,7 +52,26 @@ namespace Nethermind.JsonRpc.Modules.DebugModule
         {
             using CancellationTokenSource cancellationTokenSource = new(_traceTimeout);
             CancellationToken cancellationToken = cancellationTokenSource.Token;
-            GethLikeTxTrace transactionTrace = _debugBridge.GetTransactionTrace(transactionHash, cancellationToken, options);
+
+            // Create the custom tracer JavaScript code
+            string customTracerCode = @"
+            {
+                retVal: [],
+                step: function(log, db) { this.retVal.push(log.getPC() + ':' + log.op.toString()); },
+                fault: function(log, db) { this.retVal.push('FAULT: ' + JSON.stringify(log)); },
+                result: function(ctx, db) { return this.retVal; }
+            }";
+
+            // Create an instance of GethTraceOptions with the custom tracer
+            GethTraceOptions traceOptions = new GethTraceOptions
+            {
+                Tracer = customTracerCode,
+                // Set other options as needed
+            };
+
+            // Call debug_traceTransaction and pass the traceOptions instance
+            GethLikeTxTrace transactionTrace = _debugBridge.GetTransactionTrace(transactionHash, cancellationToken, traceOptions);
+
             if (transactionTrace is null)
             {
                 return ResultWrapper<GethLikeTxTrace>.Fail($"Cannot find transactionTrace for hash: {transactionHash}", ErrorCodes.ResourceNotFound);
@@ -60,6 +80,7 @@ namespace Nethermind.JsonRpc.Modules.DebugModule
             if (_logger.IsTrace) _logger.Trace($"{nameof(debug_traceTransaction)} request {transactionHash}, result: trace");
             return ResultWrapper<GethLikeTxTrace>.Success(transactionTrace);
         }
+
 
         public ResultWrapper<GethLikeTxTrace> debug_traceCall(TransactionForRpc call, BlockParameter? blockParameter = null, GethTraceOptions? options = null)
         {

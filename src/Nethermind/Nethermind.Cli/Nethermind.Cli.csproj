@@ -31,4 +31,11 @@
   <ItemGroup>
     <None Remove="plugins\readme.txt" />
   </ItemGroup>
+
+  <ItemGroup>
+    <None Remove="test.js" />
+    <Content Include="test.js">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
 </Project>

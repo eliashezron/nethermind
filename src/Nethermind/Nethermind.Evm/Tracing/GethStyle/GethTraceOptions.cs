@@ -24,4 +24,5 @@ namespace Nethermind.Evm.Tracing.GethStyle
 
         public static GethTraceOptions Default = new();
     }
+
 }

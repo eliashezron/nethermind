@@ -21,6 +21,23 @@
     <UserSecretsId>03db39d0-4200-473e-9ff8-4a48d496381f</UserSecretsId>
   </PropertyGroup>
 
+  <PropertyGroup Condition=" '$(RunConfiguration)' == 'Chiado' " />
+  <PropertyGroup Condition=" '$(RunConfiguration)' == 'Chiado (archive)' " />
+  <PropertyGroup Condition=" '$(RunConfiguration)' == 'EIP-4844 local trace' " />
+  <PropertyGroup Condition=" '$(RunConfiguration)' == 'Energy Web' " />
+  <PropertyGroup Condition=" '$(RunConfiguration)' == 'Gnosis' " />
+  <PropertyGroup Condition=" '$(RunConfiguration)' == 'Gnosis (archive)' " />
+  <PropertyGroup Condition=" '$(RunConfiguration)' == 'Goerli' " />
+  <PropertyGroup Condition=" '$(RunConfiguration)' == 'Goerli (archive)' " />
+  <PropertyGroup Condition=" '$(RunConfiguration)' == 'Hive' " />
+  <PropertyGroup Condition=" '$(RunConfiguration)' == 'Kovan' " />
+  <PropertyGroup Condition=" '$(RunConfiguration)' == 'Mainnet' " />
+  <PropertyGroup Condition=" '$(RunConfiguration)' == 'Mainnet (archive)' " />
+  <PropertyGroup Condition=" '$(RunConfiguration)' == 'POA Core' " />
+  <PropertyGroup Condition=" '$(RunConfiguration)' == 'Sepolia' " />
+  <PropertyGroup Condition=" '$(RunConfiguration)' == 'Sepolia (archive)' " />
+  <PropertyGroup Condition=" '$(RunConfiguration)' == 'Spaceneth' " />
+  <PropertyGroup Condition=" '$(RunConfiguration)' == 'Volta' " />
   <ItemGroup>
     <PackageReference Include="Antlr4.Runtime.Standard" />
     <PackageReference Include="AspNetCore.HealthChecks.UI" />
