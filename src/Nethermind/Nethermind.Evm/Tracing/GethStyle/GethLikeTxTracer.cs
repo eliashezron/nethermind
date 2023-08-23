@@ -67,7 +67,7 @@ public abstract class GethLikeTxTracer<TEntry> : TxTracer where TEntry : GethTxT
         CurrentTraceEntry.Opcode = opcode.GetName(isPostMerge);
         CurrentTraceEntry.ProgramCounter = pc;
 
-        // Use the custom Javascript tracer to record trance entries as per the step js command
+        // Use the custom Javascript tracer to record trace entries as per the step js command
         _customTracers?.Step(CurrentTraceEntry, null);
     }
 
