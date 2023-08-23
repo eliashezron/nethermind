@@ -15,6 +15,9 @@ using Nethermind.JsonRpc.Data;
 using Nethermind.Logging;
 using Nethermind.Serialization.Rlp;
 using Nethermind.Synchronization.Reporting;
+using System.Collections.Generic;
+
+namespace Nethermind.JsonRpc.Modules.DebugModule;
 
 public class DebugRpcModule : IDebugRpcModule
 {
@@ -44,19 +47,19 @@ public class DebugRpcModule : IDebugRpcModule
         return ResultWrapper<int>.Success(_debugBridge.DeleteChainSlice(startNumber));
     }
 
-        public ResultWrapper<GethLikeTxTrace> debug_traceTransaction(Keccak transactionHash, GethTraceOptions options = null)
+    public ResultWrapper<GethLikeTxTrace> debug_traceTransaction(Keccak transactionHash, GethTraceOptions options = null)
+    {
+        using CancellationTokenSource cancellationTokenSource = new(_traceTimeout);
+        CancellationToken cancellationToken = cancellationTokenSource.Token;
+        GethLikeTxTrace transactionTrace = _debugBridge.GetTransactionTrace(transactionHash, cancellationToken, options);
+        if (transactionTrace is null)
         {
-            using CancellationTokenSource cancellationTokenSource = new(_traceTimeout);
-            CancellationToken cancellationToken = cancellationTokenSource.Token;
-            GethLikeTxTrace transactionTrace = _debugBridge.GetTransactionTrace(transactionHash, cancellationToken, options);
-            if (transactionTrace is null)
-            {
-                return ResultWrapper<GethLikeTxTrace>.Fail($"Cannot find transactionTrace for hash: {transactionHash}", ErrorCodes.ResourceNotFound);
-            }
-
-            if (_logger.IsTrace) _logger.Trace($"{nameof(debug_traceTransaction)} request {transactionHash}, result: trace");
-            return ResultWrapper<GethLikeTxTrace>.Success(transactionTrace);
+            return ResultWrapper<GethLikeTxTrace>.Fail($"Cannot find transactionTrace for hash: {transactionHash}", ErrorCodes.ResourceNotFound);
         }
+
+        if (_logger.IsTrace) _logger.Trace($"{nameof(debug_traceTransaction)} request {transactionHash}, result: trace");
+        return ResultWrapper<GethLikeTxTrace>.Success(transactionTrace);
+    }
 
     public ResultWrapper<GethLikeTxTrace> debug_traceCall(TransactionForRpc call, BlockParameter? blockParameter = null, GethTraceOptions? options = null)
     {

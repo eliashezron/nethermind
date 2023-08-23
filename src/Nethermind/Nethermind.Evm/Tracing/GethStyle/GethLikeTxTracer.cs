@@ -6,28 +6,44 @@ using System.Collections.Generic;
 using System.Linq;
 using Nethermind.Core;
 using Nethermind.Core.Crypto;
+using Microsoft.ClearScript.V8; // For the V8ScriptEngine
+using Newtonsoft.Json.Linq; // For JArray
 
 namespace Nethermind.Evm.Tracing.GethStyle;
 
 public abstract class GethLikeTxTracer<TEntry> : TxTracer where TEntry : GethTxTraceEntry
 {
+    private readonly GethJavascriptCustomTracers _customTracers;
     protected GethLikeTxTracer(GethTraceOptions options)
     {
-        private GethTxTraceEntry? _traceEntry;
-        private readonly GethLikeTxTrace _trace = new();
+        ArgumentNullException.ThrowIfNull(options);
 
-        public GethLikeTxTracer(GethTraceOptions options)
+        IsTracingFullMemory = options.EnableMemory;
+        IsTracingOpLevelStorage = !options.DisableStorage;
+        IsTracingStack = !options.DisableStack;
+        if (!string.IsNullOrWhiteSpace(options.Tracer))
         {
-            IsTracingStack = !options.DisableStack;
-            IsTracingMemory = !options.DisableMemory;
-            IsTracingOpLevelStorage = !options.DisableStorage;
+            // Create the V8ScriptEngine
+            using (var engine = new V8ScriptEngine())
+            {
+                // Create the GethJavascriptCustomTracers instance using the provided JavaScript code from GethTraceOptions
+                _customTracers = new GethJavascriptCustomTracers(engine, options.Tracer);
+            }
         }
+        IsTracing = IsTracing || IsTracingFullMemory;
+    }
 
-        public sealed override bool IsTracingOpLevelStorage { get; protected set; }
-        public override bool IsTracingReceipt => true;
-        public sealed override bool IsTracingMemory { get; protected set; }
-        public override bool IsTracingInstructions => true;
-        public sealed override bool IsTracingStack { get; protected set; }
+    public sealed override bool IsTracingOpLevelStorage { get; protected set; }
+    public override bool IsTracingReceipt => true;
+    public sealed override bool IsTracingMemory { get; protected set; }
+    public override bool IsTracingInstructions => true;
+    public sealed override bool IsTracingStack { get; protected set; }
+    protected bool IsTracingFullMemory { get; }
+
+
+
+    protected TEntry? CurrentTraceEntry { get; set; }
+    protected GethLikeTxTrace Trace { get; } = new();
 
     public override void MarkAsSuccess(Address recipient, long gasSpent, byte[] output, LogEntry[] logs, Keccak? stateRoot = null)
     {
@@ -50,25 +66,12 @@ public abstract class GethLikeTxTracer<TEntry> : TxTracer where TEntry : GethTxT
         CurrentTraceEntry.Gas = gas;
         CurrentTraceEntry.Opcode = opcode.GetName(isPostMerge);
         CurrentTraceEntry.ProgramCounter = pc;
+
+        // Use the custom Javascript tracer to record trance entries as per the step js command
+        _customTracers?.Step(CurrentTraceEntry, null);
     }
 
-                _traceEntry.Storage = new Dictionary<string, string>(_trace.StoragesByDepth.Pop());
-            }
-            else
-            {
-                if (previousTraceEntry is null)
-                {
-                    throw new InvalidOperationException("Unexpected missing previous trace on continuation.");
-                }
-
-                _traceEntry.Storage = new Dictionary<string, string>(previousTraceEntry.Storage!);
-            }
-        }
-
-        public override void ReportOperationError(EvmExceptionType error)
-        {
-            _traceEntry!.Error = GetErrorDescription(error);
-        }
+    public override void ReportOperationError(EvmExceptionType error) => CurrentTraceEntry.Error = GetErrorDescription(error);
 
     private string? GetErrorDescription(EvmExceptionType evmExceptionType)
     {
@@ -105,10 +108,15 @@ public abstract class GethLikeTxTracer<TEntry> : TxTracer where TEntry : GethTxT
         if (CurrentTraceEntry is not null)
             AddTraceEntry(CurrentTraceEntry);
 
-        public GethLikeTxTrace BuildResult()
+        // Use the custom tracer to get the result
+        JArray customResult = _customTracers?.Result(null, null);
+
+        // Store the custom javascript tracer result in the trace
+        if (customResult != null)
         {
-            return _trace;
+            Trace.CustomTracerResult.Add(customResult);
         }
+        return Trace;
     }
     protected abstract void AddTraceEntry(TEntry entry);
 

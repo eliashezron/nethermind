@@ -21,4 +21,7 @@ public class GethLikeTxTrace
 
     [JsonProperty(PropertyName = "structLogs")]
     public List<GethTxTraceEntry> Entries { get; set; }
+
+    [JsonProperty(PropertyName = "customTracerResult")]
+    public List<Object> CustomTracerResult { get; set; } = new();
 }
