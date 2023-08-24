@@ -10,9 +10,11 @@ namespace Nethermind.Evm.Tracing.GethStyle
     {
         private static readonly V8ScriptEngine _engine = new V8ScriptEngine();
         private readonly dynamic _tracer;
+        private static GethLikeTxTrace _trace = new GethLikeTxTrace();
 
-        public GethJavascriptCustomTracer( string jsTracerCode)
+        public GethJavascriptCustomTracer(  string jsTracerCode)
         {
+
             _engine.Execute(jsTracerCode);
             _tracer = _engine.Script.tracer;
         }
@@ -20,6 +22,8 @@ namespace Nethermind.Evm.Tracing.GethStyle
         public void Step(dynamic log, dynamic db)
         {
             _tracer.step(log, db);
+            dynamic? result = _tracer.result(null, null);
+            _trace.CustomTracerResult?.Add(result);
         }
 
         public void Fault(dynamic log, dynamic db)

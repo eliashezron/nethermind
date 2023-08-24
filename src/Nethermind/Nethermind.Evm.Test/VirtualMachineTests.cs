@@ -460,7 +460,7 @@ public class VirtualMachineTests : VirtualMachineTestsBase
             MainnetSpecProvider.CancunActivation)
             .BuildResult();
 
-        // Console.WriteLine();
+        Console.WriteLine(traces.CustomTracerResult);
 
         var copied = traces.Entries.Last().Memory[0];
         var origin = traces.Entries.Last().Memory[1];
