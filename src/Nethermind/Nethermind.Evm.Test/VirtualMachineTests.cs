@@ -1,6 +1,7 @@
 // SPDX-FileCopyrightText: 2022 Demerzel Solutions Limited
 // SPDX-License-Identifier: LGPL-3.0-only
 
+using System;
 using System.Linq;
 using System.Numerics;
 using Nethermind.Core;
@@ -459,8 +460,12 @@ public class VirtualMachineTests : VirtualMachineTestsBase
             MainnetSpecProvider.CancunActivation)
             .BuildResult();
 
+        // Console.WriteLine();
+
         var copied = traces.Entries.Last().Memory[0];
         var origin = traces.Entries.Last().Memory[1];
+
+
 
         Assert.That(traces.Entries[^2].GasCost, Is.EqualTo(GasCostOf.VeryLow + GasCostOf.VeryLow * ((data.Length + 31) / 32) + GasCostOf.Memory * 1), "gas");
         Assert.That(origin, Is.EqualTo(copied));

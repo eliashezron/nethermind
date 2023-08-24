@@ -6,14 +6,13 @@ using Newtonsoft.Json.Linq;
 
 namespace Nethermind.Evm.Tracing.GethStyle
 {
-    public class GethJavascriptCustomTracers
+    public class GethJavascriptCustomTracer
     {
-        private readonly V8ScriptEngine _engine;
+        private static readonly V8ScriptEngine _engine = new V8ScriptEngine();
         private readonly dynamic _tracer;
 
-        public GethJavascriptCustomTracers(V8ScriptEngine engine, string jsTracerCode)
+        public GethJavascriptCustomTracer( string jsTracerCode)
         {
-            _engine = engine ?? throw new ArgumentNullException(nameof(engine));
             _engine.Execute(jsTracerCode);
             _tracer = _engine.Script.tracer;
         }

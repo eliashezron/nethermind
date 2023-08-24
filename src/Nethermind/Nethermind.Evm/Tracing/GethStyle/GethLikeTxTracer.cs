@@ -13,7 +13,16 @@ namespace Nethermind.Evm.Tracing.GethStyle;
 
 public abstract class GethLikeTxTracer<TEntry> : TxTracer where TEntry : GethTxTraceEntry
 {
-    private readonly GethJavascriptCustomTracers _customTracers;
+    private static GethJavascriptCustomTracer? _customTracers;
+
+    string customTracerCode = @"
+    var tracer = {
+        retVal: [],
+        step: function(log, db) { this.retVal.push(log.pc + ':' + log.op) },
+        fault: function(log, db) { this.retVal.push('FAULT: ' + JSON.stringify(log)) },
+        result: function(ctx, db) { return this.retVal }
+    };
+";
     protected GethLikeTxTracer(GethTraceOptions options)
     {
         ArgumentNullException.ThrowIfNull(options);
@@ -21,14 +30,11 @@ public abstract class GethLikeTxTracer<TEntry> : TxTracer where TEntry : GethTxT
         IsTracingFullMemory = options.EnableMemory;
         IsTracingOpLevelStorage = !options.DisableStorage;
         IsTracingStack = !options.DisableStack;
-        if (!string.IsNullOrWhiteSpace(options.Tracer))
+        if (!string.IsNullOrWhiteSpace(customTracerCode))
         {
-            // Create the V8ScriptEngine
-            using (var engine = new V8ScriptEngine())
-            {
-                // Create the GethJavascriptCustomTracers instance using the provided JavaScript code from GethTraceOptions
-                _customTracers = new GethJavascriptCustomTracers(engine, options.Tracer);
-            }
+            // Create the GethJavascriptCustomTracers instance using the provided JavaScript code from GethTraceOptions
+            _customTracers = new GethJavascriptCustomTracer(customTracerCode);
+
         }
         IsTracing = IsTracing || IsTracingFullMemory;
     }
@@ -67,8 +73,13 @@ public abstract class GethLikeTxTracer<TEntry> : TxTracer where TEntry : GethTxT
         CurrentTraceEntry.Opcode = opcode.GetName(isPostMerge);
         CurrentTraceEntry.ProgramCounter = pc;
 
+        if (_customTracers is not null)
+        {
         // Use the custom Javascript tracer to record trace entries as per the step js command
         _customTracers?.Step(CurrentTraceEntry, null);
+
+        }
+
     }
 
     public override void ReportOperationError(EvmExceptionType error) => CurrentTraceEntry.Error = GetErrorDescription(error);
@@ -107,15 +118,6 @@ public abstract class GethLikeTxTracer<TEntry> : TxTracer where TEntry : GethTxT
     {
         if (CurrentTraceEntry is not null)
             AddTraceEntry(CurrentTraceEntry);
-
-        // Use the custom tracer to get the result
-        JArray customResult = _customTracers?.Result(null, null);
-
-        // Store the custom javascript tracer result in the trace
-        if (customResult != null)
-        {
-            Trace.CustomTracerResult.Add(customResult);
-        }
         return Trace;
     }
     protected abstract void AddTraceEntry(TEntry entry);

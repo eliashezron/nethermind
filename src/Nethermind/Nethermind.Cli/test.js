@@ -29,7 +29,7 @@
 //
 //
 //
-// y.push(debug.traceTransaction("0x233597ecb5a6b649620e3da5836e56c5bf3713a35133c4dc086d190b76350a56", { disableMemory: false, disableStack: false, disableStorage: false,tracer:'{' +  'retVal: [],' + 'step: function(log,db) {this.retVal.push(log.getPC() + ":" + log.op.toString())},' + 'fault: function(log,db) {this.retVal.push("FAULT: " + JSON.stringify(log))},' + 'result: function(ctx,db) {return this.retVal}' +  '}'  }))
+// y.push(debug.traceTransaction("0x4132ab601e17fc3b0b0aad162d2655a1bde1fa08feda4176a16005d2c013b139", { disableMemory: false, disableStack: false, disableStorage: false}))
 //
 //
 //
