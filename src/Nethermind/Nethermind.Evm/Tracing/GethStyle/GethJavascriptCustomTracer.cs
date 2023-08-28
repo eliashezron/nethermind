@@ -1,20 +1,21 @@
 // SPDX-FileCopyrightText: 2023 Demerzel Solutions Limited
 // SPDX-License-Identifier: LGPL-3.0-only
 using System;
+using System.Diagnostics;
 using Microsoft.ClearScript.V8;
 using Newtonsoft.Json.Linq;
 
 namespace Nethermind.Evm.Tracing.GethStyle
 {
-    public class GethJavascriptCustomTracer
+    public class GethJavascriptCustomTracer : GethLikeTxTrace
     {
-        private static readonly V8ScriptEngine _engine = new V8ScriptEngine();
+        private readonly V8ScriptEngine _engine = new V8ScriptEngine();
         private readonly dynamic _tracer;
-        private static GethLikeTxTrace _trace = new GethLikeTxTrace();
+        
 
-        public GethJavascriptCustomTracer(  string jsTracerCode)
+        public GethJavascriptCustomTracer(string jsTracerCode)
         {
-
+      
             _engine.Execute(jsTracerCode);
             _tracer = _engine.Script.tracer;
         }
@@ -23,7 +24,8 @@ namespace Nethermind.Evm.Tracing.GethStyle
         {
             _tracer.step(log, db);
             dynamic? result = _tracer.result(null, null);
-            _trace.CustomTracerResult?.Add(result);
+            Console.WriteLine("this is the result {0}", JArray.FromObject(result));
+            CustomTracerResult?.Add(result);
         }
 
         public void Fault(dynamic log, dynamic db)
@@ -33,8 +35,8 @@ namespace Nethermind.Evm.Tracing.GethStyle
 
         public JArray Result(dynamic ctx, dynamic db)
         {
-            var result = _tracer.result(ctx, db);
-            return JArray.FromObject(result);
+            dynamic? result = _tracer.result(ctx, db);
+            return result;
         }
     }
 }

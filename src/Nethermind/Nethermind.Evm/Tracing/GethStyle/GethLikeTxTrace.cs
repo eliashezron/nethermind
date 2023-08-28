@@ -23,5 +23,5 @@ public class GethLikeTxTrace
     public List<GethTxTraceEntry> Entries { get; set; }
 
     [JsonProperty(PropertyName = "customTracerResult")]
-    public List<Object> CustomTracerResult { get; set; }
+    public List<Object> CustomTracerResult { get; set; } = new();
 }

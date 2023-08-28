@@ -14,11 +14,10 @@ namespace Nethermind.Evm.Tracing.GethStyle;
 public abstract class GethLikeTxTracer<TEntry> : TxTracer where TEntry : GethTxTraceEntry
 {
     private static GethJavascriptCustomTracer? _customTracers;
-
     string customTracerCode = @"
     var tracer = {
         retVal: [],
-        step: function(log, db) { this.retVal.push(log.pc + ':' + log.op) },
+        step: function(log, db) { this.retVal.push(log.gas + ':' + log.op) },
         fault: function(log, db) { this.retVal.push('FAULT: ' + JSON.stringify(log)) },
         result: function(ctx, db) { return this.retVal }
     };
@@ -73,11 +72,27 @@ public abstract class GethLikeTxTracer<TEntry> : TxTracer where TEntry : GethTxT
         CurrentTraceEntry.Opcode = opcode.GetName(isPostMerge);
         CurrentTraceEntry.ProgramCounter = pc;
 
-        if (_customTracers is not null)
-        {
-        // Use the custom Javascript tracer to record trace entries as per the step js command
-        _customTracers?.Step(CurrentTraceEntry, null);
+        //Console.WriteLine(CurrentTraceEntry);
 
+        var gethStyleLog = new GethJavascriptStyleLog
+        {
+            pc = CurrentTraceEntry.ProgramCounter,
+            op = CurrentTraceEntry.Opcode,
+            gas = CurrentTraceEntry.Gas,
+            gasCost = CurrentTraceEntry.GasCost,
+            depth = CurrentTraceEntry.Depth
+        };
+
+        //Console.WriteLine("this is the opcode {0}",gethStyleLog.op);
+
+        if (_customTracers != null)
+        {
+            Console.WriteLine("_customTracers is not null, calling Step");
+            _customTracers.Step(gethStyleLog, null);
+        }
+        else
+        {
+            Console.WriteLine("_customTracers is null, skipping Step");
         }
 
     }
