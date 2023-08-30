@@ -460,7 +460,7 @@ public class VirtualMachineTests : VirtualMachineTestsBase
             MainnetSpecProvider.CancunActivation)
             .BuildResult();
 
-        Console.WriteLine( "this is the result count {0}",traces.CustomTracerResult.Count);
+        //Console.WriteLine( "this is the result count {0}",traces.CustomTracerResult.Count);
 
         var copied = traces.Entries.Last().Memory[0];
         var origin = traces.Entries.Last().Memory[1];
@@ -551,6 +551,10 @@ public class VirtualMachineTests : VirtualMachineTestsBase
         Assert.That(receipt.GasSpent, Is.EqualTo(GasCostOf.Transaction + GasCostOf.VeryLow * 2 + GasCostOf.TStore), "gas");
     }
 
+
+    /// <summary>
+    /// Testing Javascript tracers implementation
+    /// </summary>
     [Test]
     public void Js_traces()
     {
@@ -560,20 +564,21 @@ public class VirtualMachineTests : VirtualMachineTestsBase
             .MCOPY(32, 0, 32)
             .STOP()
             .Done;
+        string userTracer = @"                  
+                  retVal: [],
+                  step: function(log, db) { this.retVal.push(log.pc + ':' + log.op) },
+                  fault: function(log, db) { this.retVal.push('FAULT: ' + JSON.stringify(log)) },
+                  result: function(ctx, db) { return this.retVal }            
+                ";
         GethLikeTxTrace traces = Execute(
-            new GethLikeTxMemoryTracer(GethTraceOptions.Default with { EnableMemory = true }),
+            new GethLikeTxMemoryTracer(GethTraceOptions.Default with { EnableMemory = true, Tracer = userTracer  }),
             bytecode,
             MainnetSpecProvider.CancunActivation)
             .BuildResult();
 
-        Console.WriteLine("this is the count of customTracersObject {0}", traces.CustomTracerResult[0]);
 
-        var copied = traces.Entries.Last().Memory[0];
-        var origin = traces.Entries.Last().Memory[1];
+        int result = traces.CustomTracerResult.Count;
+        Assert.That(result, Is.EqualTo(8));
 
-
-
-        Assert.That(traces.Entries[^2].GasCost, Is.EqualTo(GasCostOf.VeryLow + GasCostOf.VeryLow * ((data.Length + 31) / 32) + GasCostOf.Memory * 1), "gas");
-        Assert.That(origin, Is.EqualTo(copied));
     }
 }

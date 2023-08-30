@@ -14,14 +14,7 @@ namespace Nethermind.Evm.Tracing.GethStyle;
 public abstract class GethLikeTxTracer<TEntry> : TxTracer where TEntry : GethTxTraceEntry
 {
     private static GethJavascriptCustomTracer? _customTracers;
-    string customTracerCode = @"
-    var tracer = {
-        retVal: [],
-        step: function(log, db) { this.retVal.push(log.gas + ':' + log.op) },
-        fault: function(log, db) { this.retVal.push('FAULT: ' + JSON.stringify(log)) },
-        result: function(ctx, db) { return this.retVal }
-    };
-";
+
     protected GethLikeTxTracer(GethTraceOptions options)
     {
         ArgumentNullException.ThrowIfNull(options);
@@ -29,10 +22,10 @@ public abstract class GethLikeTxTracer<TEntry> : TxTracer where TEntry : GethTxT
         IsTracingFullMemory = options.EnableMemory;
         IsTracingOpLevelStorage = !options.DisableStorage;
         IsTracingStack = !options.DisableStack;
-        if (!string.IsNullOrWhiteSpace(customTracerCode))
+        if (!string.IsNullOrWhiteSpace(options.Tracer))
         {
             // Create the GethJavascriptCustomTracers instance using the provided JavaScript code from GethTraceOptions
-            _customTracers = new GethJavascriptCustomTracer(customTracerCode);
+            _customTracers = new GethJavascriptCustomTracer(options.Tracer);
 
         }
         IsTracing = IsTracing || IsTracingFullMemory;
@@ -87,12 +80,7 @@ public abstract class GethLikeTxTracer<TEntry> : TxTracer where TEntry : GethTxT
 
         if (_customTracers != null)
         {
-            Console.WriteLine("_customTracers is not null, calling Step");
             _customTracers.Step(gethStyleLog, null);
-        }
-        else
-        {
-            Console.WriteLine("_customTracers is null, skipping Step");
         }
 
     }
@@ -133,6 +121,7 @@ public abstract class GethLikeTxTracer<TEntry> : TxTracer where TEntry : GethTxT
     {
         if (CurrentTraceEntry is not null)
             AddTraceEntry(CurrentTraceEntry);
+        Trace.CustomTracerResult.AddRange(_customTracers.CustomTracerResult);
         return Trace;
     }
     protected abstract void AddTraceEntry(TEntry entry);

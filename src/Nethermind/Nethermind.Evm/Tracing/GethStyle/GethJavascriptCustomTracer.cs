@@ -15,8 +15,9 @@ namespace Nethermind.Evm.Tracing.GethStyle
 
         public GethJavascriptCustomTracer(string jsTracerCode)
         {
-      
-            _engine.Execute(jsTracerCode);
+
+            string fullJsCode = $"var tracer = {{{jsTracerCode}}};";
+            _engine.Execute(fullJsCode);
             _tracer = _engine.Script.tracer;
         }
 
@@ -26,6 +27,7 @@ namespace Nethermind.Evm.Tracing.GethStyle
             dynamic? result = _tracer.result(null, null);
             Console.WriteLine("this is the result {0}", JArray.FromObject(result));
             CustomTracerResult?.Add(result);
+            Console.WriteLine("this is the result count {0}", CustomTracerResult?.Count);
         }
 
         public void Fault(dynamic log, dynamic db)

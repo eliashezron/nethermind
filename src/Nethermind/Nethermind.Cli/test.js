@@ -1,9 +1,9 @@
-// function trace(x) {
-//     let y = [];
-//     y.push(debug.traceTransaction(x, { disableMemory: false, disableStack: false, disableStorage: false }))
-//     y.push(debug.traceTransaction("0x8a9d1762f88474ea31273a0d3aaf107f45ee24c0c3adc42a03d8db92302c1130", { disableMemory: false, disableStack: false, disableStorage: false,tracer:'{' +  'retVal: [],' + 'step: function(log,db) {this.retVal.push(log.getPC() + ":" + log.op.toString())},' + 'fault: function(log,db) {this.retVal.push("FAULT: " + JSON.stringify(log))},' + 'result: function(ctx,db) {return this.retVal}' +  '}'  }))
-//     return y;
-// }
+function trace(x) {
+    let y = [];
+    y.push(debug.traceTransaction(x, { disableMemory: false, disableStack: false, disableStorage: false }))
+    y.push(debug.traceTransaction("0x8a9d1762f88474ea31273a0d3aaf107f45ee24c0c3adc42a03d8db92302c1130", { disableMemory: false, disableStack: false, disableStorage: false,tracer:'{' +  'retVal: [],' + 'step: function(log,db) {this.retVal.push(log.getPC() + ":" + log.op.toString())},' + 'fault: function(log,db) {this.retVal.push("FAULT: " + JSON.stringify(log))},' + 'result: function(ctx,db) {return this.retVal}' +  '}'  }))
+    return y;
+}
 //
 // // function trace(x) {
 // //     const originalTraceResults = debug.traceTransaction(x, { disableMemory: false, disableStack: false, disableStorage: false });
