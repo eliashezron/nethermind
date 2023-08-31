@@ -76,12 +76,9 @@ public abstract class GethLikeTxTracer<TEntry> : TxTracer where TEntry : GethTxT
             depth = CurrentTraceEntry.Depth
         };
 
-        //Console.WriteLine("this is the opcode {0}",gethStyleLog.op);
 
-        if (_customTracers != null)
-        {
-            _customTracers.Step(gethStyleLog, null);
-        }
+
+        _customTracers?.Step(gethStyleLog, null);
 
     }
 
@@ -121,7 +118,10 @@ public abstract class GethLikeTxTracer<TEntry> : TxTracer where TEntry : GethTxT
     {
         if (CurrentTraceEntry is not null)
             AddTraceEntry(CurrentTraceEntry);
-        Trace.CustomTracerResult.AddRange(_customTracers.CustomTracerResult);
+        if (_customTracers is not null)
+        {
+            Trace.CustomTracerResult.AddRange(_customTracers.CustomTracerResult);
+        }
         return Trace;
     }
     protected abstract void AddTraceEntry(TEntry entry);
