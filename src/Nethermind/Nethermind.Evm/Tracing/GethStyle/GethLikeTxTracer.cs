@@ -8,6 +8,7 @@ using Nethermind.Core;
 using Nethermind.Core.Crypto;
 using Microsoft.ClearScript.V8; // For the V8ScriptEngine
 using Newtonsoft.Json.Linq; // For JArray
+using Microsoft.Extensions.Options;
 
 namespace Nethermind.Evm.Tracing.GethStyle;
 
@@ -76,8 +77,6 @@ public abstract class GethLikeTxTracer<TEntry> : TxTracer where TEntry : GethTxT
             depth = CurrentTraceEntry.Depth
         };
 
-
-
         _customTracers?.Step(gethStyleLog, null);
 
     }
@@ -106,7 +105,13 @@ public abstract class GethLikeTxTracer<TEntry> : TxTracer where TEntry : GethTxT
 
     public override void SetOperationMemorySize(ulong newSize) => CurrentTraceEntry.UpdateMemorySize(newSize);
 
-    public override void SetOperationStack(List<string> stackTrace) => CurrentTraceEntry.Stack = stackTrace;
+    public override void SetOperationStack(List<string> stackTrace)
+    {
+        CurrentTraceEntry.Stack = stackTrace;
+        var gethStyleLog = new GethJavascriptStyleLog();
+        gethStyleLog.stack.push(stackTrace);
+
+    }
 
     public override void SetOperationMemory(IEnumerable<string> memoryTrace)
     {

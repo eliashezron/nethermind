@@ -561,7 +561,7 @@ public class VirtualMachineTests : VirtualMachineTestsBase
     public void Js_traces()
     {
         byte[] data = Bytes.FromHexString("000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f");
-        byte[] bytecode = Prepare.EvmCode
+        byte[] bytecode = Prepare.EvmCode 
             .MSTORE(0, data)
             .MCOPY(32, 0, 32)
             .STOP()
