@@ -42,6 +42,7 @@ public abstract class GethLikeTxTracer<TEntry> : TxTracer where TEntry : GethTxT
 
 
     protected TEntry? CurrentTraceEntry { get; set; }
+    protected GethJavascriptStyleLog? CustomTraceEntry { get; set; } = new();
     protected GethLikeTxTrace Trace { get; } = new();
 
     public override void MarkAsSuccess(Address recipient, long gasSpent, byte[] output, LogEntry[] logs, Keccak? stateRoot = null)
@@ -68,16 +69,30 @@ public abstract class GethLikeTxTracer<TEntry> : TxTracer where TEntry : GethTxT
 
         //Console.WriteLine(CurrentTraceEntry);
 
-        var gethStyleLog = new GethJavascriptStyleLog
-        {
-            pc = CurrentTraceEntry.ProgramCounter,
-            op = CurrentTraceEntry.Opcode,
-            gas = CurrentTraceEntry.Gas,
-            gasCost = CurrentTraceEntry.GasCost,
-            depth = CurrentTraceEntry.Depth
-        };
+        //if (_customTracers is not null)
+        //{
+        //    var gethStyleLog = new GethJavascriptStyleLog
+        //    {
+        //        pc = CurrentTraceEntry.ProgramCounter,
+        //        op = CurrentTraceEntry.Opcode,
+        //        gas = CurrentTraceEntry.Gas,
+        //        gasCost = CurrentTraceEntry.GasCost,
+        //        depth = CurrentTraceEntry.Depth,
 
-        _customTracers?.Step(gethStyleLog, null);
+        //    };
+        //    _customTracers.Step(gethStyleLog, null);
+        //}
+        if (_customTracers is not null)
+        {
+            CustomTraceEntry.pc = CurrentTraceEntry.ProgramCounter;
+            CustomTraceEntry.op = CurrentTraceEntry.Opcode;
+            CustomTraceEntry.gas = CurrentTraceEntry.Gas;
+            CustomTraceEntry.gasCost = CurrentTraceEntry.GasCost;
+            CustomTraceEntry.depth = CurrentTraceEntry.Depth;
+
+            _customTracers.Step(CustomTraceEntry, null);
+        }
+
 
     }
 
@@ -108,8 +123,17 @@ public abstract class GethLikeTxTracer<TEntry> : TxTracer where TEntry : GethTxT
     public override void SetOperationStack(List<string> stackTrace)
     {
         CurrentTraceEntry.Stack = stackTrace;
-        var gethStyleLog = new GethJavascriptStyleLog();
-        gethStyleLog.stack.push(stackTrace);
+        //if (_customTracers is not null)
+        //{
+        //    var gethStyleLog = new GethJavascriptStyleLog();
+        //    gethStyleLog.stack.push(stackTrace);
+            
+        //}
+        if (_customTracers is not null)
+        {
+            CustomTraceEntry.stack.push(stackTrace);
+            
+        }
 
     }
 

@@ -462,8 +462,6 @@ public class VirtualMachineTests : VirtualMachineTestsBase
             MainnetSpecProvider.CancunActivation)
             .BuildResult();
 
-        //Console.WriteLine( "this is the result count {0}",traces.CustomTracerResult.Count);
-
         var copied = traces.Entries.Last().Memory[0];
         var origin = traces.Entries.Last().Memory[1];
 
@@ -558,7 +556,7 @@ public class VirtualMachineTests : VirtualMachineTestsBase
     /// Testing Javascript tracers implementation
     /// </summary>
     [Test]
-    public void Js_traces()
+    public void Js_traces_simple_filter()
     {
         byte[] data = Bytes.FromHexString("000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f");
         byte[] bytecode = Prepare.EvmCode 
@@ -574,6 +572,130 @@ public class VirtualMachineTests : VirtualMachineTestsBase
                 ";
         GethLikeTxTrace traces = Execute(
             new GethLikeTxMemoryTracer(GethTraceOptions.Default with { EnableMemory = true, Tracer = userTracer  }),
+            bytecode,
+            MainnetSpecProvider.CancunActivation)
+            .BuildResult();
+
+
+        int result = traces.CustomTracerResult.Count;
+
+        //test count
+        //tracesresults written into CustomTracerResult
+        Assert.That(result, Is.EqualTo(8));
+
+        // test outPut of the results written into CustomTracerResult
+        for (int i = 0; i < traces.CustomTracerResult.Count; i++)
+        {
+            dynamic arrayRet = traces.CustomTracerResult[i];
+            Assert.That(arrayRet[0], Is.EqualTo("0:PUSH32"));
+            Assert.That(arrayRet[1], Is.EqualTo("33:PUSH1"));
+            Assert.That(arrayRet[2], Is.EqualTo("35:MSTORE"));
+            Assert.That(arrayRet[3], Is.EqualTo("36:PUSH1"));
+            Assert.That(arrayRet[6], Is.EqualTo("42:JUMPSUB"));
+            Assert.That(arrayRet[7], Is.EqualTo("43:STOP"));
+        }
+
+    }
+    [Test]
+    public void Js_traces_filter_with_conditionals()
+    {
+        byte[] data = Bytes.FromHexString("000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f");
+        byte[] bytecode = Prepare.EvmCode
+            .MSTORE(0, data)
+            .MCOPY(32, 0, 32)
+            .STOP()
+            .Done;
+        string userTracer = @"                  
+                    retVal: [],
+                    step: function(log, db) { this.retVal.push(log.getPC() + ':' + log.op.toString()) },
+                    fault: function(log, db) { this.retVal.push('FAULT: ' + JSON.stringify(log)) },
+                    result: function(ctx, db) { return this.retVal }           
+                ";
+        GethLikeTxTrace traces = Execute(
+            new GethLikeTxMemoryTracer(GethTraceOptions.Default with { EnableMemory = true, Tracer = userTracer }),
+            bytecode,
+            MainnetSpecProvider.CancunActivation)
+            .BuildResult();
+
+
+        int result = traces.CustomTracerResult.Count;
+
+        //test count
+        //tracesresults written into CustomTracerResult
+        Assert.That(result, Is.EqualTo(8));
+
+        // test outPut of the results written into CustomTracerResult
+        for (int i = 0; i < traces.CustomTracerResult.Count; i++)
+        {
+            dynamic arrayRet = traces.CustomTracerResult[i];
+            Assert.That(arrayRet[0], Is.EqualTo("0:PUSH32"));
+            Assert.That(arrayRet[1], Is.EqualTo("33:PUSH1"));
+            Assert.That(arrayRet[2], Is.EqualTo("35:MSTORE"));
+            Assert.That(arrayRet[3], Is.EqualTo("36:PUSH1"));
+            Assert.That(arrayRet[6], Is.EqualTo("42:JUMPSUB"));
+            Assert.That(arrayRet[7], Is.EqualTo("43:STOP"));
+        }
+
+    }
+
+    [Test]
+    public void Js_traces_stack_information()
+    {
+        byte[] data = Bytes.FromHexString("000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f");
+        byte[] bytecode = Prepare.EvmCode
+            .MSTORE(0, data)
+            .MCOPY(32, 0, 32)
+            .STOP()
+            .Done;
+        string userTracer = @"                  
+                    retVal: [],
+                    step: function(log, db) { this.retVal.push(log.getPC() + ':' + log.stack.peek(0)) },
+                    fault: function(log, db) { this.retVal.push('FAULT: ' + JSON.stringify(log)) },
+                    result: function(ctx, db) { return this.retVal }           
+                ";
+        GethLikeTxTrace traces = Execute(
+            new GethLikeTxMemoryTracer(GethTraceOptions.Default with { EnableMemory = true, Tracer = userTracer }),
+            bytecode,
+            MainnetSpecProvider.CancunActivation)
+            .BuildResult();
+
+
+        int result = traces.CustomTracerResult.Count;
+
+        //test count
+        //tracesresults written into CustomTracerResult
+        Assert.That(result, Is.EqualTo(8));
+
+        // test outPut of the results written into CustomTracerResult
+        for (int i = 0; i < traces.CustomTracerResult.Count; i++)
+        {
+            dynamic arrayRet = traces.CustomTracerResult[i];
+            Assert.That(arrayRet[0], Is.EqualTo("0:PUSH32"));
+            Assert.That(arrayRet[1], Is.EqualTo("33:PUSH1"));
+            Assert.That(arrayRet[2], Is.EqualTo("35:MSTORE"));
+            Assert.That(arrayRet[3], Is.EqualTo("36:PUSH1"));
+            Assert.That(arrayRet[6], Is.EqualTo("42:JUMPSUB"));
+            Assert.That(arrayRet[7], Is.EqualTo("43:STOP"));
+        }
+
+    }
+    [Test]
+    public void Js_traces_storage_information()
+    {
+        byte[] data = Bytes.FromHexString("000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f");
+        byte[] bytecode = Prepare.EvmCode
+            .MSTORE(0, data)
+            .MCOPY(32, 0, 32)
+            .STOP()
+            .Done;
+        string userTracer = @"                  
+                    retVal: [],
+                    step: function(log, db) { this.retVal.push(log.getPC() + ':' + log.op.toString()) },
+                    fault: function(log, db) { this.retVal.push('FAULT: ' + JSON.stringify(log)) },
+                    result: function(ctx, db) { return this.retVal }           
+                ";
+        GethLikeTxTrace traces = Execute(
+            new GethLikeTxMemoryTracer(GethTraceOptions.Default with { EnableMemory = true, Tracer = userTracer }),
             bytecode,
             MainnetSpecProvider.CancunActivation)
             .BuildResult();

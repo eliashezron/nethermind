@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 using System;
 using System.Diagnostics;
+using Microsoft.ClearScript;
 using Microsoft.ClearScript.V8;
 using Newtonsoft.Json.Linq;
 
