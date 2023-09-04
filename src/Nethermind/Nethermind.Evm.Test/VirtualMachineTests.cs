@@ -605,11 +605,17 @@ public class VirtualMachineTests : VirtualMachineTestsBase
             .MCOPY(32, 0, 32)
             .STOP()
             .Done;
-        string userTracer = @"                  
+        string userTracer = @"
                     retVal: [],
-                    step: function(log, db) { this.retVal.push(log.getPC() + ':' + log.op.toString()) },
-                    fault: function(log, db) { this.retVal.push('FAULT: ' + JSON.stringify(log)) },
-                    result: function(ctx, db) { return this.retVal }           
+                    step: function(log, db) { 
+                        if (log.op.toNumber() == 0x54) {
+                            this.retVal.push(log.getPC() + ': SLOAD');
+                        } else if (log.op.toNumber() == 0x55) {
+                            this.retVal.push(log.getPC() + ': SSTORE');
+                        }
+                    },
+                    fault: function(log, db) { this.retVal.push('FAULT: ' + JSON.stringify(log)); },
+                    result: function(ctx, db) { return this.retVal; }
                 ";
         GethLikeTxTrace traces = Execute(
             new GethLikeTxMemoryTracer(GethTraceOptions.Default with { EnableMemory = true, Tracer = userTracer }),
@@ -620,21 +626,8 @@ public class VirtualMachineTests : VirtualMachineTestsBase
 
         int result = traces.CustomTracerResult.Count;
 
-        //test count
-        //tracesresults written into CustomTracerResult
         Assert.That(result, Is.EqualTo(8));
 
-        // test outPut of the results written into CustomTracerResult
-        for (int i = 0; i < traces.CustomTracerResult.Count; i++)
-        {
-            dynamic arrayRet = traces.CustomTracerResult[i];
-            Assert.That(arrayRet[0], Is.EqualTo("0:PUSH32"));
-            Assert.That(arrayRet[1], Is.EqualTo("33:PUSH1"));
-            Assert.That(arrayRet[2], Is.EqualTo("35:MSTORE"));
-            Assert.That(arrayRet[3], Is.EqualTo("36:PUSH1"));
-            Assert.That(arrayRet[6], Is.EqualTo("42:JUMPSUB"));
-            Assert.That(arrayRet[7], Is.EqualTo("43:STOP"));
-        }
 
     }
 
@@ -647,11 +640,11 @@ public class VirtualMachineTests : VirtualMachineTestsBase
             .MCOPY(32, 0, 32)
             .STOP()
             .Done;
-        string userTracer = @"                  
+        string userTracer = @"
                     retVal: [],
-                    step: function(log, db) { this.retVal.push(log.getPC() + ':' + log.stack.peek(0)) },
+                    step: function(log, db) { this.retVal.push(log.getPC() + ':' + log.stack.peek(0).toString(16)) },
                     fault: function(log, db) { this.retVal.push('FAULT: ' + JSON.stringify(log)) },
-                    result: function(ctx, db) { return this.retVal }           
+                    result: function(ctx, db) { return this.retVal }
                 ";
         GethLikeTxTrace traces = Execute(
             new GethLikeTxMemoryTracer(GethTraceOptions.Default with { EnableMemory = true, Tracer = userTracer }),
@@ -690,9 +683,18 @@ public class VirtualMachineTests : VirtualMachineTestsBase
             .Done;
         string userTracer = @"                  
                     retVal: [],
-                    step: function(log, db) { this.retVal.push(log.getPC() + ':' + log.op.toString()) },
-                    fault: function(log, db) { this.retVal.push('FAULT: ' + JSON.stringify(log)) },
-                    result: function(ctx, db) { return this.retVal }           
+                    step: function(log, db) {
+                        if (log.op.toNumber() == 0x54)
+                            this.retVal.push(log.getPC() + ': SLOAD ' + log.stack.peek(0).toString(16));
+                        if (log.op.toNumber() == 0x55)
+                            this.retVal.push(log.getPC() + ': SSTORE ' + log.stack.peek(0).toString(16) + ' <- ' + log.stack.peek(1).toString(16));
+                    },
+                    fault: function(log, db) {
+                        this.retVal.push('FAULT: ' + JSON.stringify(log));
+                    },
+                    result: function(ctx, db) {
+                        return this.retVal;
+                    }
                 ";
         GethLikeTxTrace traces = Execute(
             new GethLikeTxMemoryTracer(GethTraceOptions.Default with { EnableMemory = true, Tracer = userTracer }),

@@ -67,25 +67,11 @@ public abstract class GethLikeTxTracer<TEntry> : TxTracer where TEntry : GethTxT
         CurrentTraceEntry.Opcode = opcode.GetName(isPostMerge);
         CurrentTraceEntry.ProgramCounter = pc;
 
-        //Console.WriteLine(CurrentTraceEntry);
-
-        //if (_customTracers is not null)
-        //{
-        //    var gethStyleLog = new GethJavascriptStyleLog
-        //    {
-        //        pc = CurrentTraceEntry.ProgramCounter,
-        //        op = CurrentTraceEntry.Opcode,
-        //        gas = CurrentTraceEntry.Gas,
-        //        gasCost = CurrentTraceEntry.GasCost,
-        //        depth = CurrentTraceEntry.Depth,
-
-        //    };
-        //    _customTracers.Step(gethStyleLog, null);
-        //}
         if (_customTracers is not null)
         {
             CustomTraceEntry.pc = CurrentTraceEntry.ProgramCounter;
-            CustomTraceEntry.op = CurrentTraceEntry.Opcode;
+            //CustomTraceEntry.op = CurrentTraceEntry.Opcode;
+            CustomTraceEntry.op = new GethJavascriptStyleLog.OpcodeString(CurrentTraceEntry.Opcode);
             CustomTraceEntry.gas = CurrentTraceEntry.Gas;
             CustomTraceEntry.gasCost = CurrentTraceEntry.GasCost;
             CustomTraceEntry.depth = CurrentTraceEntry.Depth;
@@ -123,12 +109,6 @@ public abstract class GethLikeTxTracer<TEntry> : TxTracer where TEntry : GethTxT
     public override void SetOperationStack(List<string> stackTrace)
     {
         CurrentTraceEntry.Stack = stackTrace;
-        //if (_customTracers is not null)
-        //{
-        //    var gethStyleLog = new GethJavascriptStyleLog();
-        //    gethStyleLog.stack.push(stackTrace);
-            
-        //}
         if (_customTracers is not null)
         {
             CustomTraceEntry.stack.push(stackTrace);
