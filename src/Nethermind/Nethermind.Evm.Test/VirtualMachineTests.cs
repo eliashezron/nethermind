@@ -672,7 +672,7 @@ public class VirtualMachineTests : VirtualMachineTestsBase
         {
             dynamic arrayRet = traces.CustomTracerResult[i];
             Assert.That(arrayRet[0], Is.EqualTo("35: MSTORE 0x102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f"));
-            Assert.That(arrayRet[1], Is.EqualTo("43: STOP 0x102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f <- 0x102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f"));
+            Assert.That(arrayRet[1], Is.EqualTo("43: STOP 0x20 <- 0x0"));
         }
 
     }

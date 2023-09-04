@@ -29,12 +29,12 @@ namespace Nethermind.Evm.Tracing.GethStyle
             {
                 _items.AddRange(items);
             }
-
             public string? peek(int index)
             {
-                if (index >= 0 && index < _items.Count)
+                int topIndex = _items.Count - 1 - index;
+                if (topIndex >= 0 && topIndex < _items.Count)
                 {
-                    return _items[index];
+                    return _items[topIndex];
                 }
                 return null;
             }
