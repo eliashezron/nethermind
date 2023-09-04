@@ -11,7 +11,6 @@ namespace Nethermind.Evm.Tracing.GethStyle
     {
 
         public long? pc { get; set; }
-        //public string? op { get; set; }
         public OpcodeString? op { get; set; }
         public long? gas { get; set; }
         public long? gasCost { get; set; }
@@ -50,13 +49,13 @@ namespace Nethermind.Evm.Tracing.GethStyle
             }
 
             // Method to get the opcode number
-            public byte? toNumber()
+            public string? toNumber()
             {
                 if (!string.IsNullOrWhiteSpace(_value))
                 {
-                    if (Enum.TryParse<Instruction>(_value, out var opcode))
+                    if (Enum.TryParse<Instruction>(_value, out Instruction opcode))
                     {
-                        return (byte)opcode;
+                        return $"0x{(byte)opcode:X2}"; // Formats the value as a hexadecimal string
                     }
                     else
                     {
@@ -66,6 +65,8 @@ namespace Nethermind.Evm.Tracing.GethStyle
                 }
                 return null;
             }
+
+            // return js .toString() method
             public string toString()
             {
                 return _value;

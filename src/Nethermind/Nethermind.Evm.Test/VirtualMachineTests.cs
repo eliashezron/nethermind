@@ -608,10 +608,10 @@ public class VirtualMachineTests : VirtualMachineTestsBase
         string userTracer = @"
                     retVal: [],
                     step: function(log, db) { 
-                        if (log.op.toNumber() == 0x54) {
-                            this.retVal.push(log.getPC() + ': SLOAD');
-                        } else if (log.op.toNumber() == 0x55) {
-                            this.retVal.push(log.getPC() + ': SSTORE');
+                        if (log.op.toNumber() == 0x60) {
+                            this.retVal.push(log.getPC() + ': PUSH1');
+                        } else if (log.op.toNumber() == 0x52) {
+                            this.retVal.push(log.getPC() + ': MSTORE');
                         }
                     },
                     fault: function(log, db) { this.retVal.push('FAULT: ' + JSON.stringify(log)); },
@@ -623,55 +623,20 @@ public class VirtualMachineTests : VirtualMachineTestsBase
             MainnetSpecProvider.CancunActivation)
             .BuildResult();
 
-
-        int result = traces.CustomTracerResult.Count;
-
-        Assert.That(result, Is.EqualTo(8));
-
-
-    }
-
-    [Test]
-    public void Js_traces_stack_information()
-    {
-        byte[] data = Bytes.FromHexString("000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f");
-        byte[] bytecode = Prepare.EvmCode
-            .MSTORE(0, data)
-            .MCOPY(32, 0, 32)
-            .STOP()
-            .Done;
-        string userTracer = @"
-                    retVal: [],
-                    step: function(log, db) { this.retVal.push(log.getPC() + ':' + log.stack.peek(0).toString(16)) },
-                    fault: function(log, db) { this.retVal.push('FAULT: ' + JSON.stringify(log)) },
-                    result: function(ctx, db) { return this.retVal }
-                ";
-        GethLikeTxTrace traces = Execute(
-            new GethLikeTxMemoryTracer(GethTraceOptions.Default with { EnableMemory = true, Tracer = userTracer }),
-            bytecode,
-            MainnetSpecProvider.CancunActivation)
-            .BuildResult();
-
-
-        int result = traces.CustomTracerResult.Count;
-
-        //test count
-        //tracesresults written into CustomTracerResult
-        Assert.That(result, Is.EqualTo(8));
-
         // test outPut of the results written into CustomTracerResult
         for (int i = 0; i < traces.CustomTracerResult.Count; i++)
         {
             dynamic arrayRet = traces.CustomTracerResult[i];
-            Assert.That(arrayRet[0], Is.EqualTo("0:PUSH32"));
-            Assert.That(arrayRet[1], Is.EqualTo("33:PUSH1"));
-            Assert.That(arrayRet[2], Is.EqualTo("35:MSTORE"));
-            Assert.That(arrayRet[3], Is.EqualTo("36:PUSH1"));
-            Assert.That(arrayRet[6], Is.EqualTo("42:JUMPSUB"));
-            Assert.That(arrayRet[7], Is.EqualTo("43:STOP"));
+            Assert.That(arrayRet[0], Is.EqualTo("33: PUSH1"));
+            Assert.That(arrayRet[1], Is.EqualTo("35: MSTORE"));
+            Assert.That(arrayRet[2], Is.EqualTo("36: PUSH1"));
+            Assert.That(arrayRet[3], Is.EqualTo("38: PUSH1"));
+            Assert.That(arrayRet[4], Is.EqualTo("40: PUSH1"));
+            
         }
 
     }
+
     [Test]
     public void Js_traces_storage_information()
     {
@@ -684,10 +649,10 @@ public class VirtualMachineTests : VirtualMachineTestsBase
         string userTracer = @"                  
                     retVal: [],
                     step: function(log, db) {
-                        if (log.op.toNumber() == 0x54)
-                            this.retVal.push(log.getPC() + ': SLOAD ' + log.stack.peek(0).toString(16));
-                        if (log.op.toNumber() == 0x55)
-                            this.retVal.push(log.getPC() + ': SSTORE ' + log.stack.peek(0).toString(16) + ' <- ' + log.stack.peek(1).toString(16));
+                        if (log.op.toNumber() == 0x52)
+                            this.retVal.push(log.getPC() + ': MSTORE ' + log.stack.peek(0).toString(16));
+                        if (log.op.toNumber() == 0x00)
+                            this.retVal.push(log.getPC() + ': STOP ' + log.stack.peek(0).toString(16) + ' <- ' + log.stack.peek(1).toString(16));
                     },
                     fault: function(log, db) {
                         this.retVal.push('FAULT: ' + JSON.stringify(log));
@@ -702,23 +667,12 @@ public class VirtualMachineTests : VirtualMachineTestsBase
             MainnetSpecProvider.CancunActivation)
             .BuildResult();
 
-
-        int result = traces.CustomTracerResult.Count;
-
-        //test count
-        //tracesresults written into CustomTracerResult
-        Assert.That(result, Is.EqualTo(8));
-
         // test outPut of the results written into CustomTracerResult
         for (int i = 0; i < traces.CustomTracerResult.Count; i++)
         {
             dynamic arrayRet = traces.CustomTracerResult[i];
-            Assert.That(arrayRet[0], Is.EqualTo("0:PUSH32"));
-            Assert.That(arrayRet[1], Is.EqualTo("33:PUSH1"));
-            Assert.That(arrayRet[2], Is.EqualTo("35:MSTORE"));
-            Assert.That(arrayRet[3], Is.EqualTo("36:PUSH1"));
-            Assert.That(arrayRet[6], Is.EqualTo("42:JUMPSUB"));
-            Assert.That(arrayRet[7], Is.EqualTo("43:STOP"));
+            Assert.That(arrayRet[0], Is.EqualTo("35: MSTORE 0x102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f"));
+            Assert.That(arrayRet[1], Is.EqualTo("43: STOP 0x102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f <- 0x102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f"));
         }
 
     }

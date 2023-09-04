@@ -70,7 +70,6 @@ public abstract class GethLikeTxTracer<TEntry> : TxTracer where TEntry : GethTxT
         if (_customTracers is not null)
         {
             CustomTraceEntry.pc = CurrentTraceEntry.ProgramCounter;
-            //CustomTraceEntry.op = CurrentTraceEntry.Opcode;
             CustomTraceEntry.op = new GethJavascriptStyleLog.OpcodeString(CurrentTraceEntry.Opcode);
             CustomTraceEntry.gas = CurrentTraceEntry.Gas;
             CustomTraceEntry.gasCost = CurrentTraceEntry.GasCost;
