@@ -641,16 +641,22 @@ public class VirtualMachineTests : VirtualMachineTestsBase
     public void Js_traces_storage_information()
     {
         byte[] data = Bytes.FromHexString("000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f");
+        // Store data in storage at slot 0x20
         byte[] bytecode = Prepare.EvmCode
-            .MSTORE(0, data)
+            .SSTORE(0x20, data)
+            // Copy data from storage slot 0x20 to memory
+            .SLOAD(0x20)
+            .MSTORE(0x40, data)
             .MCOPY(32, 0, 32)
             .STOP()
             .Done;
         string userTracer = @"                  
                     retVal: [],
                     step: function(log, db) {
-                        if (log.op.toNumber() == 0x52)
-                            this.retVal.push(log.getPC() + ': MSTORE ' + log.stack.peek(0).toString(16));
+                        if (log.op.toNumber() == 0x54)
+                            this.retVal.push(log.getPC() + ': SSTORE ' + log.stack.peek(0).toString(16));
+                        if (log.op.toNumber() == 0x55)
+                            this.retVal.push(log.getPC() + ': SLOAD ' + log.stack.peek(0).toString(16));
                         if (log.op.toNumber() == 0x00)
                             this.retVal.push(log.getPC() + ': STOP ' + log.stack.peek(0).toString(16) + ' <- ' + log.stack.peek(1).toString(16));
                     },
@@ -671,8 +677,61 @@ public class VirtualMachineTests : VirtualMachineTestsBase
         for (int i = 0; i < traces.CustomTracerResult.Count; i++)
         {
             dynamic arrayRet = traces.CustomTracerResult[i];
-            Assert.That(arrayRet[0], Is.EqualTo("35: MSTORE 0x102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f"));
-            Assert.That(arrayRet[1], Is.EqualTo("43: STOP 0x20 <- 0x0"));
+            Assert.That(arrayRet[0], Is.EqualTo("35: SLOAD 0x102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f"));
+            Assert.That(arrayRet[1], Is.EqualTo("38: SSTORE 0x20"));
+            Assert.That(arrayRet[2], Is.EqualTo("82: STOP 0x20 <- 0x0"));
+        }
+
+    }
+    [Test]
+    public void Js_traces_operation_results()
+    {
+        byte[] data = Bytes.FromHexString("000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f");
+        // Store data in storage at slot 0x20
+        byte[] bytecode = Prepare.EvmCode
+            .SSTORE(0x20, data)
+            // Copy data from storage slot 0x20 to memory
+            .SLOAD(0x20)
+            //.MSTORE(0x40, data)
+            .MCOPY(32, 0, 32)
+            .STOP()
+            .Done;
+        string userTracer = @"                  
+                    retVal: [],
+                    afterSload: false,
+                    step: function(log, db) {
+                        if (this.afterSload) {
+                                this.retVal.push(""Result: "" + log.stack.peek(0).toString(16));
+                            this.afterSload = false;
+                        }
+                        if (log.op.toNumber() == 0x54) {
+                                this.retVal.push(log.getPC() + ""SLOAD "" + log.stack.peek(0).toString(16));
+                            this.afterSload = true;
+                        }
+                        if (log.op.toNumber() == 0x55) {
+                            this.retVal.push(log.getPC() + "" SSTORE"" + log.stack.peek(0).toString(16) + "" <- "" + log.stack.peek(1).toString(16));
+                        }
+                    },
+                    fault: function(log, db) {
+                    this.retVal.push(""FAULT: "" + JSON.stringify(log));
+                },
+                    result: function(ctx, db) {
+                    return this.retVal;
+                }
+                ";
+        GethLikeTxTrace traces = Execute(
+            new GethLikeTxMemoryTracer(GethTraceOptions.Default with { EnableMemory = true, Tracer = userTracer }),
+            bytecode,
+            MainnetSpecProvider.CancunActivation)
+            .BuildResult();
+
+        // test outPut of the results written into CustomTracerResult
+        for (int i = 0; i < traces.CustomTracerResult.Count; i++)
+        {
+            dynamic arrayRet = traces.CustomTracerResult[i];
+            Assert.That(arrayRet[0], Is.EqualTo("38: SSTORE 0x20"));
+            Assert.That(arrayRet[1], Is.EqualTo("38: SLOAD 0x20"));
+            Assert.That(arrayRet[2], Is.EqualTo("82: STOP 0x20 <- 0x0"));
         }
 
     }

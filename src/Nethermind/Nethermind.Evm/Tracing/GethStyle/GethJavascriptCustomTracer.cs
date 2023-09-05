@@ -31,6 +31,7 @@ namespace Nethermind.Evm.Tracing.GethStyle
             }
             catch (Exception)
             {
+               
                 _tracer.fault(log, db);
             }
             dynamic? result = _tracer.result(null, null);
