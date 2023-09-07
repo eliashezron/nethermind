@@ -559,7 +559,7 @@ public class VirtualMachineTests : VirtualMachineTestsBase
     public void Js_traces_simple_filter()
     {
         byte[] data = Bytes.FromHexString("000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f");
-        byte[] bytecode = Prepare.EvmCode 
+        byte[] bytecode = Prepare.EvmCode
             .MSTORE(0, data)
             .MCOPY(32, 0, 32)
             .STOP()
@@ -653,9 +653,9 @@ public class VirtualMachineTests : VirtualMachineTestsBase
         string userTracer = @"                  
                     retVal: [],
                     step: function(log, db) {
-                        if (log.op.toNumber() == 0x54)
-                            this.retVal.push(log.getPC() + ': SSTORE ' + log.stack.peek(0).toString(16));
                         if (log.op.toNumber() == 0x55)
+                            this.retVal.push(log.getPC() + ': SSTORE ' + log.stack.peek(0).toString(16));
+                        if (log.op.toNumber() == 0x54)
                             this.retVal.push(log.getPC() + ': SLOAD ' + log.stack.peek(0).toString(16));
                         if (log.op.toNumber() == 0x00)
                             this.retVal.push(log.getPC() + ': STOP ' + log.stack.peek(0).toString(16) + ' <- ' + log.stack.peek(1).toString(16));
@@ -677,8 +677,8 @@ public class VirtualMachineTests : VirtualMachineTestsBase
         for (int i = 0; i < traces.CustomTracerResult.Count; i++)
         {
             dynamic arrayRet = traces.CustomTracerResult[i];
-            Assert.That(arrayRet[0], Is.EqualTo("35: SLOAD 0x102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f"));
-            Assert.That(arrayRet[1], Is.EqualTo("38: SSTORE 0x20"));
+            Assert.That(arrayRet[0], Is.EqualTo("35: SSTORE 0x102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f"));
+            Assert.That(arrayRet[1], Is.EqualTo("38: SLOAD 0x20"));
             Assert.That(arrayRet[2], Is.EqualTo("82: STOP 0x20 <- 0x0"));
         }
 
@@ -704,13 +704,12 @@ public class VirtualMachineTests : VirtualMachineTestsBase
                                 this.retVal.push(""Result: "" + log.stack.peek(0).toString(16));
                             this.afterSload = false;
                         }
-                        if (log.op.toNumber() == 0x55) {
+                        if (log.op.toNumber() == 0x54) {
                                 this.retVal.push(log.getPC() + ""SLOAD "" + log.stack.peek(0).toString(16));
                             this.afterSload = true;
                         }
-                        if (log.op.toNumber() == 0x54) {
-                            this.retVal.push(log.getPC() + "" SSTORE"" + log.stack.peek(0).toString(16) + "" <- "" + log.stack.peek(1).toString(16));
-                        }
+                        if (log.op.toNumber() == 0x55) 
+                            this.retVal.push(log.getPC() + "" SSTORE"" + log.stack.peek(0).toString(16) + "" <- "" + log.stack.peek(0).toString(16));
                     },
                     fault: function(log, db) {
                         this.retVal.push(""FAULT: "" + JSON.stringify(log));

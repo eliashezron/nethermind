@@ -25,7 +25,7 @@ namespace Nethermind.Evm.Tracing.GethStyle
         {
             private readonly List<string> _items = new();
 
-            public void push(IEnumerable<string> items)
+            public void push(List<string> items)
             {
                 _items.AddRange(items);
             }
@@ -75,4 +75,3 @@ namespace Nethermind.Evm.Tracing.GethStyle
 
     }
 }
-
