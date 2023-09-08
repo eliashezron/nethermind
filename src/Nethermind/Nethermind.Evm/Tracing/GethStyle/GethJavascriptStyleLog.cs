@@ -3,19 +3,18 @@
 
 using System;
 using System.Collections.Generic;
+using System.Reflection.Emit;
 using Nethermind.Evm;
 
 namespace Nethermind.Evm.Tracing.GethStyle
 {
     public class GethJavascriptStyleLog
     {
-
         public long? pc { get; set; }
         public OpcodeString? op { get; set; }
         public long? gas { get; set; }
         public long? gasCost { get; set; }
         public int? depth { get; set; }
-
         public long? getPC()
         {
             return pc;
@@ -41,37 +40,22 @@ namespace Nethermind.Evm.Tracing.GethStyle
         }
         public class OpcodeString
         {
-            private readonly string _value;
+            private readonly Instruction _value;
 
-            public OpcodeString(string value)
+            public OpcodeString(Instruction value)
             {
                 _value = value;
             }
 
-            // Method to get the opcode number
-            public string? toNumber()
+            public string toNumber()
             {
-                if (!string.IsNullOrWhiteSpace(_value))
-                {
-                    if (Enum.TryParse<Instruction>(_value, out Instruction opcode))
-                    {
-                        return $"0x{(byte)opcode:X2}"; // Formats the value as a hexadecimal string
-                    }
-                    else
-                    {
-                        // Handle unknown opcodes
-                        return null;
-                    }
-                }
-                return null;
+                return _value.GetHex();
             }
 
-            // return js .toString() method
             public string toString()
             {
-                return _value;
+                return _value.GetName();
             }
         }
-
     }
 }

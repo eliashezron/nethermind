@@ -728,9 +728,9 @@ public class VirtualMachineTests : VirtualMachineTestsBase
         for (int i = 0; i < traces.CustomTracerResult.Count; i++)
         {
             dynamic arrayRet = traces.CustomTracerResult[i];
-            Assert.That(arrayRet[0], Is.EqualTo("35SLOAD 0x102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f"));
-            Assert.That(arrayRet[1], Is.EqualTo("Result: 0x20"));
-            Assert.That(arrayRet[2], Is.EqualTo("38 SSTORE0x20 <- 0x102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f"));
+            Assert.That(arrayRet[0], Is.EqualTo("35 SSTORE0x102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f <- 0x102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f"));
+            Assert.That(arrayRet[1], Is.EqualTo("38SLOAD 0x20"));
+            Assert.That(arrayRet[2], Is.EqualTo("Result: 0x20"));
         }
 
     }
