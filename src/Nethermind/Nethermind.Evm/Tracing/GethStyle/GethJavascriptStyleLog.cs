@@ -47,12 +47,12 @@ namespace Nethermind.Evm.Tracing.GethStyle
                 _value = value;
             }
 
-            public string toNumber()
+            public string? toNumber()
             {
                 return _value.GetHex();
             }
 
-            public string toString()
+            public string? toString()
             {
                 return _value.GetName();
             }

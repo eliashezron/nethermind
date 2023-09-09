@@ -34,8 +34,5 @@
 
   <ItemGroup>
     <None Remove="test.js" />
-    <Content Include="test.js">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
   </ItemGroup>
 </Project>

@@ -19,6 +19,7 @@ using Nethermind.Logging;
 using Nethermind.State;
 using Nethermind.Trie.Pruning;
 using NUnit.Framework;
+using Nethermind.Evm.Tracing.ParityStyle;
 
 namespace Nethermind.Evm.Test;
 
@@ -307,5 +308,36 @@ public class VirtualMachineTestsBase
     protected void AssertCodeHash(Address address, Keccak codeHash)
     {
         Assert.That(TestState.GetCodeHash(address), Is.EqualTo(codeHash), "code hash");
+    }
+    protected (ParityLikeTxTrace trace, Block block, Transaction tx) ExecuteInitAndTraceParityCall(params byte[] code)
+    {
+        (Block block, Transaction transaction) = PrepareInitTx(BlockNumber, 100000, code);
+        ParityLikeTxTracer tracer = new(block, transaction, ParityTraceTypes.Trace | ParityTraceTypes.StateDiff);
+        _processor.Execute(transaction, block.Header, tracer);
+        return (tracer.BuildResult(), block, transaction);
+    }
+
+    protected (ParityLikeTxTrace trace, Block block, Transaction tx) ExecuteAndTraceParityCall(params byte[] code)
+    {
+        (Block block, Transaction transaction) = PrepareTx(BlockNumber, 100000, code);
+        ParityLikeTxTracer tracer = new(block, transaction, ParityTraceTypes.Trace | ParityTraceTypes.StateDiff | ParityTraceTypes.VmTrace);
+        _processor.Execute(transaction, block.Header, tracer);
+        return (tracer.BuildResult(), block, transaction);
+    }
+
+    protected (ParityLikeTxTrace trace, Block block, Transaction tx) ExecuteAndTraceParityCall(ParityTraceTypes traceTypes, params byte[] code)
+    {
+        (Block block, Transaction transaction) = PrepareTx(BlockNumber, 100000, code);
+        ParityLikeTxTracer tracer = new(block, transaction, traceTypes);
+        _processor.Execute(transaction, block.Header, tracer);
+        return (tracer.BuildResult(), block, transaction);
+    }
+
+    protected (ParityLikeTxTrace trace, Block block, Transaction tx) ExecuteAndTraceParityCall(byte[] input, UInt256 value, params byte[] code)
+    {
+        (Block block, Transaction transaction) = PrepareTx(BlockNumber, 100000, code, input, value);
+        ParityLikeTxTracer tracer = new(block, transaction, ParityTraceTypes.Trace | ParityTraceTypes.StateDiff);
+        _processor.Execute(transaction, block.Header, tracer);
+        return (tracer.BuildResult(), block, transaction);
     }
 }

@@ -12,12 +12,12 @@ using NUnit.Framework;
 using Nethermind.Specs;
 using Newtonsoft.Json.Linq;
 using Newtonsoft.Json;
-
+using Nethermind.Core.Test.Builders;
+using Nethermind.Evm.Tracing.ParityStyle;
 namespace Nethermind.Evm.Test;
-
 [TestFixture]
 [Parallelizable(ParallelScope.Self)]
-public class VirtualMachineTests : VirtualMachineTestsBase
+public class VirtualMachineTests :VirtualMachineTestsBase 
 {
     [Test]
     public void Stop()
@@ -733,5 +733,39 @@ public class VirtualMachineTests : VirtualMachineTestsBase
             Assert.That(arrayRet[2], Is.EqualTo("Result: 0x20"));
         }
 
+    }
+    [Test]
+    public void Can_trace_delegate_call()
+    {
+        byte[] deployedCode = new byte[3];
+
+        byte[] initCode = Prepare.EvmCode
+            .ForInitOf(deployedCode)
+            .Done;
+
+        byte[] createCode = Prepare.EvmCode
+            .Create(initCode, 0)
+            .Op(Instruction.STOP)
+            .Done;
+
+        TestState.CreateAccount(TestItem.AddressC, 1.Ether());
+        TestState.InsertCode(TestItem.AddressC, createCode, Spec);
+
+        byte[] code = Prepare.EvmCode
+            .DelegateCall(TestItem.AddressC, 50000)
+            .Op(Instruction.STOP)
+            .Done;
+
+        (ParityLikeTxTrace trace, Block block, Transaction tx) = ExecuteAndTraceParityCall(code);
+        int[] depths = new int[]
+        {
+                1, 1, 1, 1, 1, 1, 1, 1, // STACK FOR CALL
+                2, 2, 2, 2, 2, 2, 2, 2, 2, // DELEGATE CALL
+                3, 3, 3, 3, 3, 3, // CREATE
+                2, // STOP
+                1, // STOP
+        };
+
+        Assert.That(trace.Action.Subtraces[0].CallType, Is.EqualTo("delegatecall"), "[0] type");
     }
 }

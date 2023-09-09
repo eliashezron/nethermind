@@ -6,15 +6,13 @@ using System.Collections.Generic;
 using System.Linq;
 using Nethermind.Core;
 using Nethermind.Core.Crypto;
-using Microsoft.ClearScript.V8; // For the V8ScriptEngine
-using Newtonsoft.Json.Linq; // For JArray
-using Microsoft.Extensions.Options;
+
 
 namespace Nethermind.Evm.Tracing.GethStyle;
 
 public abstract class GethLikeTxTracer<TEntry> : TxTracer where TEntry : GethTxTraceEntry
 {
-    private static GethJavascriptCustomTracer? _customTracers;
+    private readonly GethJavascriptCustomTracer? _customTracers;
 
     protected GethLikeTxTracer(GethTraceOptions options)
     {
@@ -42,7 +40,7 @@ public abstract class GethLikeTxTracer<TEntry> : TxTracer where TEntry : GethTxT
 
 
     protected TEntry? CurrentTraceEntry { get; set; }
-    protected GethJavascriptStyleLog? CustomTraceEntry { get; set; } = new();
+    private GethJavascriptStyleLog? CustomTraceEntry { get; set; } = new();
     protected GethLikeTxTrace Trace { get; } = new();
 
     public override void MarkAsSuccess(Address recipient, long gasSpent, byte[] output, LogEntry[] logs, Keccak? stateRoot = null)
@@ -111,7 +109,7 @@ public abstract class GethLikeTxTracer<TEntry> : TxTracer where TEntry : GethTxT
         if (_customTracers is not null)
         {
             CustomTraceEntry.stack.push(stackTrace);
-            
+
         }
 
     }
