@@ -35,6 +35,7 @@ namespace Nethermind.Evm.Tracing.GethStyle
                 _tracer.fault(log, db);
             }
             dynamic? result = _tracer.result(null, null);
+            
             Console.WriteLine("this is the result {0}", JArray.FromObject(result));
             CustomTracerResult?.Add(result);
         }
@@ -47,7 +48,7 @@ namespace Nethermind.Evm.Tracing.GethStyle
         public JArray Result(dynamic ctx, dynamic db)
         {
             dynamic? result = _tracer.result(ctx, db);
-            return result;
+            return _engine.Script.Array.from(result);
         }
     }
 }

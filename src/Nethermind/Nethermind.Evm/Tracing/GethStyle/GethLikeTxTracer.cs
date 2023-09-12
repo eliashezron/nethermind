@@ -4,8 +4,11 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Microsoft.ClearScript;
 using Nethermind.Core;
 using Nethermind.Core.Crypto;
+using Nethermind.Core.Extensions;
+using Nethermind.Int256;
 
 
 namespace Nethermind.Evm.Tracing.GethStyle;
@@ -14,8 +17,9 @@ public abstract class GethLikeTxTracer<TEntry> : TxTracer where TEntry : GethTxT
 {
     private readonly GethJavascriptCustomTracer? _customTracers;
 
-    protected GethLikeTxTracer(GethTraceOptions options)
+    protected GethLikeTxTracer( GethTraceOptions options)
     {
+
         ArgumentNullException.ThrowIfNull(options);
 
         IsTracingFullMemory = options.EnableMemory;
@@ -102,6 +106,29 @@ public abstract class GethLikeTxTracer<TEntry> : TxTracer where TEntry : GethTxT
     public override void ReportOperationRemainingGas(long gas) => CurrentTraceEntry.GasCost = CurrentTraceEntry.Gas - gas;
 
     public override void SetOperationMemorySize(ulong newSize) => CurrentTraceEntry.UpdateMemorySize(newSize);
+
+    // public override void ReportAddress(Address address)
+    // {
+    //     if (_customTracers is not null)
+    //     {
+    //         CustomTraceEntry.contract = new GethJavascriptStyleLog.Contract(_engine, address);
+    //
+    //         Console.WriteLine("this is the _to address:{0}", CustomTraceEntry.contract.getAddress().ToHexString());
+    //
+    //     }
+    // }
+    public override void ReportAction(long gas, UInt256 value, Address from, Address to, ReadOnlyMemory<byte> input, ExecutionType callType,
+        bool isPrecompileCall = false)
+    {
+        base.ReportAction(gas, value, from, to, input, callType, isPrecompileCall);
+        if (_customTracers is not null)
+        {
+            CustomTraceEntry.contract = new GethJavascriptStyleLog.Contract(to);
+
+            //Console.WriteLine("this is the _to address:{0}", CustomTraceEntry.contract.getAddress().ToHexString());
+
+        }
+    }
 
     public override void SetOperationStack(List<string> stackTrace)
     {

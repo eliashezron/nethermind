@@ -73,7 +73,6 @@ namespace Nethermind.Evm.Tracing.ParityStyle
 
         private static string GetCallType(ExecutionType executionType)
         {
-            Console.WriteLine(executionType);
             switch (executionType)
             {
                 case ExecutionType.Transaction:
@@ -97,7 +96,7 @@ namespace Nethermind.Evm.Tracing.ParityStyle
 
         private string GetActionType(ExecutionType executionType)
         {
-            Console.WriteLine(executionType);
+
             switch (executionType)
             {
                 case ExecutionType.Transaction:
@@ -394,7 +393,7 @@ namespace Nethermind.Evm.Tracing.ParityStyle
 
         public override void ReportAction(long gas, UInt256 value, Address @from, Address to, ReadOnlyMemory<byte> input, ExecutionType callType, bool isPrecompileCall = false)
         {
-                Console.WriteLine(from);
+                Console.WriteLine("from: {0} call-type: {1} to :{2}",from, callType, to);
             ParityTraceAction action = new()
             {
                 IsPrecompiled = isPrecompileCall,

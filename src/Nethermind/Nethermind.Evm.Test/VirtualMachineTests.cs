@@ -14,6 +14,8 @@ using Newtonsoft.Json.Linq;
 using Newtonsoft.Json;
 using Nethermind.Core.Test.Builders;
 using Nethermind.Evm.Tracing.ParityStyle;
+using NSubstitute;
+
 namespace Nethermind.Evm.Test;
 [TestFixture]
 [Parallelizable(ParallelScope.Self)]
@@ -734,38 +736,93 @@ public class VirtualMachineTests :VirtualMachineTestsBase
         }
 
     }
+
+    /// <summary>
+    /// Testing Javascript tracers implementation
+    /// </summary>
     [Test]
-    public void Can_trace_delegate_call()
+    public void Js_traces_calls_btn_contracts()
     {
-        byte[] deployedCode = new byte[3];
-
-        byte[] initCode = Prepare.EvmCode
-            .ForInitOf(deployedCode)
+        byte[] data = Bytes.FromHexString("000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f");
+        // Store data in storage at slot 0x20
+        byte[] bytecode = Prepare.EvmCode
+            .SSTORE(0x20, data)
+            // Copy data from storage slot 0x20 to memory
+            .SLOAD(0x20)
+            //.MSTORE(0x40, data)
+            .MCOPY(32, 0, 32)
+            .STOP()
             .Done;
 
-        byte[] createCode = Prepare.EvmCode
-            .Create(initCode, 0)
-            .Op(Instruction.STOP)
-            .Done;
+        string userTracer = @"
+                    retVal: [],
+                    afterSload: false,
+                    callStack: [],
+                    byte2Hex: function(byte) {
+                        if (byte < 0x10) {
+                            return ""0"" + byte.toString(16);
+                        }
+                        return byte.toString(16);
+                    },
+                    array2Hex: function(arr) {
+                        var retVal = """";
+                        for (var i=0; i<arr.length; i++) {
+                            retVal += this.byte2Hex(arr[i]);
+                        }
+                        return retVal;
+                    },
+                    getAddr: function(log) {
+                        return this.array2Hex(log.contract.getAddress());
+                    },
+                    step: function(log, db) {
+                        var opcode = log.op.toNumber();
+                        // SLOAD
+                        if (opcode == 0x54) {
+                            this.retVal.push(log.getPC() + "": SLOAD "" +
+                                this.getAddr(log) + "":"" +
+                                log.stack.peek(0).toString(16));
+                            this.afterSload = true;
+                        }
+                        // SLOAD Result
+                        if (this.afterSload) {
+                            this.retVal.push(""Result: "" +
+                                log.stack.peek(0).toString(16));
+                            this.afterSload = false;
+                        }
+                        // SSTORE
+                        if (opcode == 0x55) {
+                            this.retVal.push(log.getPC() + "": SSTORE "" +
+                                this.getAddr(log) + "":"" +
+                                log.stack.peek(0).toString(16) + "" <- "" +
+                                log.stack.peek(0).toString(16));
+                        }
+                        // End of step
+                        
+                    },
+                    fault: function(log, db) {
+                        this.retVal.push(""FAULT: "" + JSON.stringify(log));
+                    },
+                    result: function(ctx, db) {
+                        return this.retVal;
+                }";
 
-        TestState.CreateAccount(TestItem.AddressC, 1.Ether());
-        TestState.InsertCode(TestItem.AddressC, createCode, Spec);
+        GethLikeTxTrace traces = Execute(
+            new GethLikeTxMemoryTracer(GethTraceOptions.Default with { EnableMemory = true, Tracer = userTracer }),
+            bytecode,
+            MainnetSpecProvider.CancunActivation)
+            .BuildResult();
 
-        byte[] code = Prepare.EvmCode
-            .DelegateCall(TestItem.AddressC, 50000)
-            .Op(Instruction.STOP)
-            .Done;
 
-        (ParityLikeTxTrace trace, Block block, Transaction tx) = ExecuteAndTraceParityCall(code);
-        int[] depths = new int[]
+        // test outPut of the results written into CustomTracerResult
+        for (int i = 0; i < traces.CustomTracerResult.Count; i++)
         {
-                1, 1, 1, 1, 1, 1, 1, 1, // STACK FOR CALL
-                2, 2, 2, 2, 2, 2, 2, 2, 2, // DELEGATE CALL
-                3, 3, 3, 3, 3, 3, // CREATE
-                2, // STOP
-                1, // STOP
-        };
+            dynamic arrayRet = traces.CustomTracerResult[i];
+            Assert.That(arrayRet[0], Is.EqualTo("35: SSTORE 942921b14f1b1c385cd7e0cc2ef7abe5598c8358:0x102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f <- 0x102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f"));
+            Assert.That(arrayRet[1], Is.EqualTo("38: SLOAD 942921b14f1b1c385cd7e0cc2ef7abe5598c8358:0x20"));
+            Assert.That(arrayRet[2], Is.EqualTo("Result: 0x20"));
 
-        Assert.That(trace.Action.Subtraces[0].CallType, Is.EqualTo("delegatecall"), "[0] type");
+        }
+
     }
+
 }
