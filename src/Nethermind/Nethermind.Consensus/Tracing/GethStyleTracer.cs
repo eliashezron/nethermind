@@ -154,6 +154,7 @@ public class GethStyleTracer : IGethStyleTracer
 
         var tracer = new GethLikeBlockMemoryTracer(options with { TxHash = txHash });
 
+
         _processor.Process(block, ProcessingOptions.Trace, tracer.WithCancellation(cancellationToken));
 
         return tracer.BuildResult().SingleOrDefault();
