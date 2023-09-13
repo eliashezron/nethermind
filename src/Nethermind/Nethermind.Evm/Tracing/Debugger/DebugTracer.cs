@@ -278,7 +278,6 @@ public class DebugTracer : ITxTracer, ITxTracerWrapper, IDisposable
     public void ReportStorageRead(in StorageCell storageCell)
         => InnerTracer.ReportStorageRead(storageCell);
 
-
     public void Dispose()
     {
         _autoResetEvent.Dispose();

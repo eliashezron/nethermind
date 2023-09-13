@@ -31,5 +31,5 @@ public record GethTraceOptions
     [JsonProperty("txHash")]
     public Keccak? TxHash { get; init; }
 
-    public static GethTraceOptions Default = new();
+    public static GethTraceOptions Default { get; } = new();
 }

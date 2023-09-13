@@ -441,7 +441,6 @@ internal sealed class VirtualMachine<TLogger> : IVirtualMachine
                 {
                     txTracer.ReportOperationError(ex is EvmException evmException ? evmException.ExceptionType : EvmExceptionType.Other);
                     txTracer.ReportOperationRemainingGas(0);
-
                 }
 
                 if (typeof(TTracingActions) == typeof(IsTracing))
@@ -2783,7 +2782,6 @@ ReturnFailure:
         {
             _txTracer.SetOperationStack(stackValue.GetStackTrace());
         }
-
     }
 
     [MethodImpl(MethodImplOptions.NoInlining)]

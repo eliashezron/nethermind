@@ -19,7 +19,6 @@ using Nethermind.Logging;
 using Nethermind.State;
 using Nethermind.Trie.Pruning;
 using NUnit.Framework;
-using Nethermind.Evm.Tracing.ParityStyle;
 
 namespace Nethermind.Evm.Test;
 

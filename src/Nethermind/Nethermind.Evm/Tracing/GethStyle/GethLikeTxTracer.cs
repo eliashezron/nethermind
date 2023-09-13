@@ -14,6 +14,7 @@ public abstract class GethLikeTxTracer<TEntry> : TxTracer where TEntry : GethTxT
     protected GethLikeTxTracer(GethTraceOptions options)
     {
         ArgumentNullException.ThrowIfNull(options);
+
         IsTracingFullMemory = options.EnableMemory;
         IsTracingOpLevelStorage = !options.DisableStorage;
         IsTracingStack = !options.DisableStack;

@@ -190,8 +190,6 @@ public class BlockReceiptsTracer : IBlockTracer, ITxTracer, IJournal<int>, ITxTr
         }
     }
 
-
-
     private ITxTracer _currentTxTracer = NullTxTracer.Instance;
     private int _currentIndex;
     private readonly List<TxReceipt> _txReceipts = new();

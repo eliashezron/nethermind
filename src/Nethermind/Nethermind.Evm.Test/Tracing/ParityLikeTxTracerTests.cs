@@ -843,6 +843,5 @@ namespace Nethermind.Evm.Test.Tracing
             _processor.Execute(transaction, block.Header, tracer);
             return (tracer.BuildResult(), block, transaction);
         }
-
     }
 }

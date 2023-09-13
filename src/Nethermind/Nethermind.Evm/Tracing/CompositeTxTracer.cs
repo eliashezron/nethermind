@@ -484,6 +484,4 @@ public class CompositeTxTracer : ITxTracer
             }
         }
     }
-
-
 }
