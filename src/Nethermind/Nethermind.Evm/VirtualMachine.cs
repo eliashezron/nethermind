@@ -2771,7 +2771,9 @@ ReturnFailure:
     private void StartInstructionTrace<TIsTracing>(Instruction instruction, EvmState vmState, long gasAvailable, int programCounter, in EvmStack<TIsTracing> stackValue)
         where TIsTracing : struct, IIsTracing
     {
+        _txTracer.ReportAction(vmState.GasAvailable, vmState.Env.Value, vmState.From, vmState.To, vmState.Env.InputData, vmState.ExecutionType, true);
         _txTracer.StartOperation(vmState.Env.CallDepth + 1, gasAvailable, instruction, programCounter, vmState.Env.TxExecutionContext.Header.IsPostMerge);
+
         if (_txTracer.IsTracingMemory)
         {
             _txTracer.SetOperationMemory(vmState.Memory?.GetTrace() ?? Enumerable.Empty<string>());
