@@ -1,6 +1,7 @@
 // SPDX-FileCopyrightText: 2022 Demerzel Solutions Limited
 // SPDX-License-Identifier: LGPL-3.0-only
 
+using System;
 using System.Linq;
 using System.Numerics;
 using Nethermind.Core;
@@ -12,14 +13,12 @@ using Nethermind.Specs;
 using Newtonsoft.Json.Linq;
 using Newtonsoft.Json;
 using Nethermind.Core.Test.Builders;
-using Nethermind.Evm.Tracing.ParityStyle;
 using NSubstitute;
 
 namespace Nethermind.Evm.Test;
-
 [TestFixture]
 [Parallelizable(ParallelScope.Self)]
-public class VirtualMachineTests : VirtualMachineTestsBase
+public class VirtualMachineTests :VirtualMachineTestsBase 
 {
     [Test]
     public void Stop()
@@ -466,6 +465,8 @@ public class VirtualMachineTests : VirtualMachineTestsBase
 
         var copied = traces.Entries.Last().Memory[0];
         var origin = traces.Entries.Last().Memory[1];
+
+
 
         Assert.That(traces.Entries[^2].GasCost, Is.EqualTo(GasCostOf.VeryLow + GasCostOf.VeryLow * ((data.Length + 31) / 32) + GasCostOf.Memory * 1), "gas");
         Assert.That(origin, Is.EqualTo(copied));
