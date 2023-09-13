@@ -4,6 +4,7 @@
 using FluentAssertions;
 using Nethermind.Specs;
 using NUnit.Framework;
+using System;
 using Nethermind.Int256;
 using System.Linq;
 

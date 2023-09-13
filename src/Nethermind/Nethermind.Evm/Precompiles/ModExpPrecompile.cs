@@ -9,6 +9,7 @@ using Nethermind.Core.Extensions;
 using Nethermind.Core.Specs;
 using Nethermind.Int256;
 using MathGmp.Native;
+using Nethermind.State;
 
 namespace Nethermind.Evm.Precompiles
 {

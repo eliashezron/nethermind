@@ -6,6 +6,7 @@ using System.Security.Cryptography;
 using System.Threading;
 using Nethermind.Core;
 using Nethermind.Core.Specs;
+using Nethermind.State;
 
 namespace Nethermind.Evm.Precompiles
 {

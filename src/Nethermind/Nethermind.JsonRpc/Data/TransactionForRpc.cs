@@ -38,14 +38,7 @@ public class TransactionForRpc
         }
         ChainId = transaction.ChainId;
         Type = transaction.Type;
-        if (transaction.SupportsAccessList)
-        {
-            AccessList = transaction.AccessList is null ? Array.Empty<AccessListItemForRpc>() : AccessListItemForRpc.FromAccessList(transaction.AccessList);
-        }
-        else
-        {
-            AccessList = null;
-        }
+        AccessList = transaction.AccessList is null ? null : AccessListItemForRpc.FromAccessList(transaction.AccessList);
         MaxFeePerBlobGas = transaction.MaxFeePerBlobGas;
         BlobVersionedHashes = transaction.BlobVersionedHashes;
 
@@ -91,12 +84,7 @@ public class TransactionForRpc
 
     public UInt256? MaxFeePerGas { get; set; }
     public long? Gas { get; set; }
-
-    // Required for compatibility with some CLs like Prysm
-    // Accept during deserialization, ignore during serialization
-    // See: https://github.com/NethermindEth/nethermind/pull/6067
-    [JsonProperty(nameof(Data))]
-    private byte[]? Data { set { Input = value; } }
+    public byte[]? Data { get; set; }
 
     [JsonProperty(NullValueHandling = NullValueHandling.Include)]
     public byte[]? Input { get; set; }
@@ -135,7 +123,7 @@ public class TransactionForRpc
             To = To,
             SenderAddress = From,
             Value = Value ?? 0,
-            Data = Input,
+            Data = Data ?? Input,
             Type = Type,
             AccessList = TryGetAccessList(),
             ChainId = chainId,
@@ -161,7 +149,7 @@ public class TransactionForRpc
 
     public T ToTransaction<T>(ulong? chainId = null) where T : Transaction, new()
     {
-        byte[]? data = Input;
+        byte[]? data = Data ?? Input;
 
         T tx = new()
         {
