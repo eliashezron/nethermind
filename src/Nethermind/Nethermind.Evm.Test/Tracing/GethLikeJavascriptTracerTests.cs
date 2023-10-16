@@ -44,7 +44,7 @@ public class GethLikeJavascriptTracerTests : VirtualMachineTestsBase
     private GethLikeJavascriptTxTracer GetTracer(string userTracer) =>
         new(
             new GethJavascriptStyleDb(TestState),
-            new GethJavascriptStyleCtx(),
+            new GethJavascriptStyleCtx() { gasPrice = 1 },
             Cancun.Instance,
             GethTraceOptions.Default with { EnableMemory = true, Tracer = userTracer }
         );
