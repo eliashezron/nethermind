@@ -187,9 +187,9 @@ public interface ITxTracer : IWorldStateTracer
     /// <summary>
     ///
     /// </summary>
-    /// <param name="stackTrace"></param>
+    /// <param name="stack"></param>
     /// <remarks>Depends on <see cref="IsTracingStack"/></remarks>
-    void SetOperationStack(List<string> stackTrace);
+    void SetOperationStack(TraceStack stack);
 
     /// <summary>
     ///
@@ -222,7 +222,7 @@ public interface ITxTracer : IWorldStateTracer
     /// </summary>
     /// <param name="memoryTrace"></param>
     /// <remarks>Depends on <see cref="IsTracingMemory"/></remarks>
-    void SetOperationMemory(IEnumerable<string> memoryTrace);
+    void SetOperationMemory(TraceMemory memoryTrace);
 
     /// <summary>
     ///

@@ -2774,13 +2774,14 @@ ReturnFailure:
         _txTracer.StartOperation(vmState.Env.CallDepth + 1, gasAvailable, instruction, programCounter, vmState.Env.TxExecutionContext.Header.IsPostMerge);
         if (_txTracer.IsTracingMemory)
         {
-            _txTracer.SetOperationMemory(vmState.Memory?.GetTrace() ?? Enumerable.Empty<string>());
+            _txTracer.SetOperationMemory(vmState.Memory?.GetTrace() ?? new TraceMemory());
             _txTracer.SetOperationMemorySize(vmState.Memory?.Size ?? 0);
         }
 
         if (_txTracer.IsTracingStack)
         {
-            _txTracer.SetOperationStack(stackValue.GetStackTrace());
+            Memory<byte> stackMemory = vmState.DataStack.AsMemory().Slice(0, stackValue.Head * EvmStack<TIsTracing>.WordSize);
+            _txTracer.SetOperationStack(new TraceStack(stackMemory));
         }
     }
 

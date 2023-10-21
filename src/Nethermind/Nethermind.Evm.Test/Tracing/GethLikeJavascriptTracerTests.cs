@@ -1,16 +1,10 @@
 // SPDX-FileCopyrightText: 2023 Demerzel Solutions Limited
 // SPDX-License-Identifier: LGPL-3.0-only
 
-using System.Linq;
-using System.Numerics;
-using Nethermind.Core;
 using Nethermind.Core.Extensions;
 using Nethermind.Evm.Tracing.GethStyle;
-using Nethermind.Int256;
 using NUnit.Framework;
 using Nethermind.Specs;
-using static System.Runtime.InteropServices.JavaScript.JSType;
-using System;
 using Nethermind.Core.Test.Builders;
 using Nethermind.Evm.Tracing.GethStyle.Javascript;
 using Nethermind.Specs.Forks;
@@ -37,12 +31,12 @@ public class GethLikeJavascriptTracerTests : VirtualMachineTestsBase
                 GetBytecode(),
                 MainnetSpecProvider.CancunActivation)
             .BuildResult();
-        string[] expectedStrings = { "0:PUSH32:0:79000:null", "33:PUSH1:0:78997:null", "35:MSTORE:0:78994:null", "36:PUSH32:0:78988:null", "69:PUSH1:0:78985:null", "71:MSTORE:0:78982:null", "72:STOP:0:78976:null" };
+        string[] expectedStrings = { "0:PUSH32:0:79000:0", "33:PUSH1:0:78997:0", "35:MSTORE:0:78994:0", "36:PUSH32:0:78988:0", "69:PUSH1:0:78985:0", "71:MSTORE:0:78982:0", "72:STOP:0:78976:0" };
         Assert.That(traces.CustomTracerResult, Is.EqualTo(expectedStrings));
     }
 
     private GethLikeJavascriptTxTracer GetTracer(string userTracer) =>
-        new(
+        new(TestItem.KeccakA,
             new GethJavascriptStyleDb(TestState),
             new GethJavascriptStyleCtx() { gasPrice = 1 },
             Cancun.Instance,
@@ -223,11 +217,11 @@ public class GethLikeJavascriptTracerTests : VirtualMachineTestsBase
                             this.afterSload = false;
                         }
                         if (log.op.toNumber() == 0x54) {
-                                this.retVal.push(log.getPC() + ""SLOAD "" + log.stack.peek(0).toString(16));
+                                this.retVal.push(log.getPC() + "" SLOAD "" + log.stack.peek(0).toString(16));
                             this.afterSload = true;
                         }
                         if (log.op.toNumber() == 0x55)
-                            this.retVal.push(log.getPC() + "" SSTORE"" + log.stack.peek(0).toString(16) + "" <- "" + log.stack.peek(1).toString(16));
+                            this.retVal.push(log.getPC() + "" SSTORE "" + log.stack.peek(0).toString(16) + "" <- "" + log.stack.peek(1).toString(16));
                     },
                     fault: function(log, db) {
                         this.retVal.push(""FAULT: "" + JSON.stringify(log));
@@ -241,7 +235,7 @@ public class GethLikeJavascriptTracerTests : VirtualMachineTestsBase
                 GetOperationalBytecode(),
                 MainnetSpecProvider.CancunActivation)
             .BuildResult();
-        string[] expectedStrings = { "68 SSTORE3412a0 <- 7856b1", "104SLOAD 3412a0", "Result: 0" };
+        string[] expectedStrings = { "68 SSTORE 3412a0 <- 7856b1", "104 SLOAD 3412a0", "Result: 0" };
         Assert.That(traces.CustomTracerResult, Is.EqualTo(expectedStrings));
     }
 
@@ -337,7 +331,7 @@ public class GethLikeJavascriptTracerTests : VirtualMachineTestsBase
     {
         GethLikeTxTrace traces = Execute(
                 GetTracer("prestateTracer"),
-                GetOperationalBytecode(),
+                GetComplexBytecode(),
                 MainnetSpecProvider.CancunActivation)
             .BuildResult();
          // string[] expectedStrings = { "68: SSTORE 942921b14f1b1c385cd7e0cc2ef7abe5598c8358:3412a0 <- 7856b1", "104: SLOAD 942921b14f1b1c385cd7e0cc2ef7abe5598c8358:3412a0", "Result: 3412a0" };

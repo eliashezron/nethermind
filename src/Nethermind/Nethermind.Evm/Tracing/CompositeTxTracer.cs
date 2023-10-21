@@ -185,14 +185,14 @@ public class CompositeTxTracer : ITxTracer
         }
     }
 
-    public void SetOperationStack(List<string> stackTrace)
+    public void SetOperationStack(TraceStack stack)
     {
         for (int index = 0; index < _txTracers.Count; index++)
         {
             ITxTracer innerTracer = _txTracers[index];
             if (innerTracer.IsTracingStack)
             {
-                innerTracer.SetOperationStack(stackTrace);
+                innerTracer.SetOperationStack(stack);
             }
         }
     }
@@ -233,7 +233,7 @@ public class CompositeTxTracer : ITxTracer
         }
     }
 
-    public void SetOperationMemory(IEnumerable<string> memoryTrace)
+    public void SetOperationMemory(TraceMemory memoryTrace)
     {
         for (int index = 0; index < _txTracers.Count; index++)
         {
@@ -341,14 +341,14 @@ public class CompositeTxTracer : ITxTracer
         }
     }
 
-    public void ReportAction(long gas, UInt256 value, Address @from, Address to, ReadOnlyMemory<byte> input, ExecutionType callType, bool isPrecompileCall = false)
+    public void ReportAction(long gas, UInt256 value, Address from, Address? to, ReadOnlyMemory<byte> input, ExecutionType callType, bool isPrecompileCall = false)
     {
         for (int index = 0; index < _txTracers.Count; index++)
         {
             ITxTracer innerTracer = _txTracers[index];
             if (innerTracer.IsTracingActions)
             {
-                innerTracer.ReportAction(gas, value, @from, to, input, callType, isPrecompileCall);
+                innerTracer.ReportAction(gas, value, from, to, input, callType, isPrecompileCall);
             }
         }
     }

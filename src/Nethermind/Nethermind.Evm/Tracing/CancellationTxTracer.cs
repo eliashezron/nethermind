@@ -213,12 +213,12 @@ public class CancellationTxTracer : ITxTracer, ITxTracerWrapper
         }
     }
 
-    public void SetOperationStack(List<string> stackTrace)
+    public void SetOperationStack(TraceStack stack)
     {
         _token.ThrowIfCancellationRequested();
         if (_innerTracer.IsTracingStack)
         {
-            _innerTracer.SetOperationStack(stackTrace);
+            _innerTracer.SetOperationStack(stack);
         }
     }
 
@@ -249,7 +249,7 @@ public class CancellationTxTracer : ITxTracer, ITxTracerWrapper
         }
     }
 
-    public void SetOperationMemory(IEnumerable<string> memoryTrace)
+    public void SetOperationMemory(TraceMemory memoryTrace)
     {
         _token.ThrowIfCancellationRequested();
         if (_innerTracer.IsTracingMemory)
@@ -330,12 +330,12 @@ public class CancellationTxTracer : ITxTracer, ITxTracerWrapper
         }
     }
 
-    public void ReportAction(long gas, UInt256 value, Address @from, Address to, ReadOnlyMemory<byte> input, ExecutionType callType, bool isPrecompileCall = false)
+    public void ReportAction(long gas, UInt256 value, Address from, Address? to, ReadOnlyMemory<byte> input, ExecutionType callType, bool isPrecompileCall = false)
     {
         _token.ThrowIfCancellationRequested();
         if (_innerTracer.IsTracingActions)
         {
-            _innerTracer.ReportAction(gas, value, @from, to, input, callType, isPrecompileCall);
+            _innerTracer.ReportAction(gas, value, from, to, input, callType, isPrecompileCall);
         }
     }
 
