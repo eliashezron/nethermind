@@ -331,13 +331,26 @@ public class GethLikeJavascriptTracerTests : VirtualMachineTestsBase
     {
         GethLikeTxTrace traces = Execute(
                 GetTracer("prestateTracer"),
+                GetOperationalBytecode(),
+                MainnetSpecProvider.CancunActivation)
+            .BuildResult();
+        // string[] expectedStrings = { "68: SSTORE 942921b14f1b1c385cd7e0cc2ef7abe5598c8358:3412a0 <- 7856b1", "104: SLOAD 942921b14f1b1c385cd7e0cc2ef7abe5598c8358:3412a0", "Result: 3412a0" };
+        // Assert.That(traces.CustomTracerResult, Is.EqualTo(expectedStrings));
+    }
+
+    [Test]
+    public void JS_tracers_builtIns_call_tracer()
+    {
+        GethLikeTxTrace traces = Execute(
+                GetTracer("callTracer"),
                 GetComplexBytecode(),
                 MainnetSpecProvider.CancunActivation)
             .BuildResult();
-         // string[] expectedStrings = { "68: SSTORE 942921b14f1b1c385cd7e0cc2ef7abe5598c8358:3412a0 <- 7856b1", "104: SLOAD 942921b14f1b1c385cd7e0cc2ef7abe5598c8358:3412a0", "Result: 3412a0" };
-         // Assert.That(traces.CustomTracerResult, Is.EqualTo(expectedStrings));
-        // Assert.That(traces.CustomTracerResult, Has.All.Empty);
+        // string[] expectedStrings = { "68: SSTORE 942921b14f1b1c385cd7e0cc2ef7abe5598c8358:3412a0 <- 7856b1", "104: SLOAD 942921b14f1b1c385cd7e0cc2ef7abe5598c8358:3412a0", "Result: 3412a0" };
+        // Assert.That(traces.CustomTracerResult, Is.EqualTo(expectedStrings));
     }
+
+
 
     private static byte[] GetBytecode()
     {
@@ -398,10 +411,6 @@ public class GethLikeJavascriptTracerTests : VirtualMachineTestsBase
         TestState.CreateAccount(TestItem.AddressC, 1.Ether());
         TestState.InsertCode(TestItem.AddressC, createCode, Spec);
         return Prepare.EvmCode
-            // .PushData(SampleHexData2.PadLeft(64, '0'))
-            // .PushData(SampleHexData1.PadLeft(64, '0'))
-            // .PushData(SampleHexData2.PadLeft(64, '0'))
-            // .PushData(SampleHexData1.PadLeft(64, '0'))
             .DelegateCall(TestItem.AddressC, 50000)
             .Op(Instruction.STOP)
             .Done;
