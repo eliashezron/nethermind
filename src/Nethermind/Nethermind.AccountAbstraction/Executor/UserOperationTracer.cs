@@ -70,13 +70,13 @@ namespace Nethermind.AccountAbstraction.Executor
         public override bool IsTracingAccess => true;
 
         public override void MarkAsSuccess(Address recipient, long gasSpent, byte[] output, LogEntry[] logs,
-            Keccak? stateRoot = null)
+            Hash256? stateRoot = null)
         {
             Output = output;
         }
 
         public override void MarkAsFailed(Address recipient, long gasSpent, byte[] output, string error,
-            Keccak? stateRoot = null)
+            Hash256? stateRoot = null)
         {
             Success = false;
             Error = error;
@@ -186,7 +186,7 @@ namespace Nethermind.AccountAbstraction.Executor
             }
         }
 
-        public override void ReportAction(long gas, UInt256 value, Address from, Address? to, ReadOnlyMemory<byte> input,
+        public override void ReportAction(long gas, UInt256 value, Address from, Address to, ReadOnlyMemory<byte> input,
             ExecutionType callType,
             bool isPrecompileCall = false)
         {

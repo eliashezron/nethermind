@@ -35,14 +35,14 @@ namespace Nethermind.Evm.Tracing
 
         public byte StatusCode { get; set; }
 
-        public override void MarkAsSuccess(Address recipient, long gasSpent, byte[] output, LogEntry[] logs, Keccak? stateRoot = null)
+        public override void MarkAsSuccess(Address recipient, long gasSpent, byte[] output, LogEntry[] logs, Hash256? stateRoot = null)
         {
             GasSpent = gasSpent;
             ReturnValue = output;
             StatusCode = Evm.StatusCode.Success;
         }
 
-        public override void MarkAsFailed(Address recipient, long gasSpent, byte[]? output, string error, Keccak? stateRoot = null)
+        public override void MarkAsFailed(Address recipient, long gasSpent, byte[]? output, string error, Hash256? stateRoot = null)
         {
             GasSpent = gasSpent;
             Error = error;
@@ -93,7 +93,7 @@ namespace Nethermind.Evm.Tracing
 
         private readonly Stack<GasAndNesting> _currentGasAndNesting = new();
 
-        public override void ReportAction(long gas, UInt256 value, Address from, Address? to, ReadOnlyMemory<byte> input, ExecutionType callType, bool isPrecompileCall = false)
+        public override void ReportAction(long gas, UInt256 value, Address from, Address to, ReadOnlyMemory<byte> input, ExecutionType callType, bool isPrecompileCall = false)
         {
             if (_currentNestingLevel == -1)
             {

@@ -3,94 +3,54 @@
 
 using System;
 using System.Collections;
-using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
-using Microsoft.ClearScript;
 using Microsoft.ClearScript.JavaScript;
 using Nethermind.Core;
-using Nethermind.Core.Collections;
 using Nethermind.Core.Extensions;
 using Nethermind.Int256;
-using System.Runtime.InteropServices;
 
 namespace Nethermind.Evm.Tracing.GethStyle.Javascript;
 
 public static class JavascriptConverter
 {
-    public static string ToHexString(this IList? list)
-    {
-        if (list is null)
-        {
-            return "0x";
-        }
-
-        using ArrayPoolList<byte>? pooledList = new(list.Count, list.ToBytes());
-        return ((ReadOnlySpan<byte>)pooledList.AsSpan()).ToHexString(true);
-    }
-
-    // Slice
-    public static byte[] Slice(this IList input, long startIndex, long endIndex)
-    {
-        if (input == null)
-        {
-            throw new ArgumentNullException(nameof(input));
-        }
-
-        if (startIndex < 0 || startIndex >= input.Count)
-        {
-            throw new ArgumentOutOfRangeException(nameof(startIndex), "Start index is out of range.");
-        }
-
-        if (endIndex <= startIndex || endIndex > input.Count)
-        {
-            throw new ArgumentOutOfRangeException(nameof(endIndex), "End index is out of range.");
-        }
-
-        int length = (int)(endIndex - startIndex);
-        return input.ToBytes().Skip((int)startIndex).Take(length).ToArray();
-    }
-
-    public static IEnumerable<byte> ToBytes(this IList list) => list.ToEnumerable().Select(Convert.ToByte);
-
-    public static byte[]? ToWord(this object input) => input switch
-    {
-        string hexString => Bytes.FromHexString(hexString, EvmPooledMemory.WordSize),
-        IList list => list.ToBytes()
-            .Concat(Enumerable.Repeat((byte)0, Math.Max(0, EvmPooledMemory.WordSize - list.Count)))
-            .Take(EvmPooledMemory.WordSize).ToArray(),
-        _ => null
-    };
-
-    public static byte[]? ToBytes(this object input) => input switch
+    public static byte[] ToBytes(this object input) => input switch
     {
         string hexString => Bytes.FromHexString(hexString),
-        IList list => list.ToBytes().ToArray(),
-        _ => null
+        ITypedArray<byte> typedArray => typedArray.Length == 0 ? Array.Empty<byte>() : typedArray.ToArray(),
+        IArrayBuffer arrayBuffer => arrayBuffer.GetBytes(),
+        IArrayBufferView arrayBufferView => arrayBufferView.GetBytes(),
+        IList list => list.ToEnumerable().Select(Convert.ToByte).ToArray(),
+        _ => throw new ArgumentException(nameof(input))
     };
 
-    public static Address ToAddress(this IList address) => new(address.ToBytes().ToArray());
+    public static byte[] ToWord(this object input) => input switch
+        {
+            string hexString => Bytes.FromHexString(hexString, EvmPooledMemory.WordSize),
+            _ => ListToWord(input)
+        };
+
+    private static byte[] ListToWord(object input)
+    {
+        byte[] bytes = input.ToBytes();
+        return bytes.Length == EvmPooledMemory.WordSize
+            ? bytes
+            : bytes
+                .Concat(Enumerable.Repeat((byte)0, Math.Max(0, EvmPooledMemory.WordSize - bytes.Length)))
+                .Take(EvmPooledMemory.WordSize).ToArray();
+    }
 
     public static Address ToAddress(this object address) => address switch
     {
         string hexString => Address.TryParseVariableLength(hexString, out Address parsedAddress)
             ? parsedAddress
             : throw new ArgumentException("Not correct address", nameof(address)),
-        IList list => list.ToAddress(),
-        _ => throw new ArgumentException("Not correct address", nameof(address))
+        _ => new Address(address.ToBytes())
     } ?? throw new ArgumentException("Not correct address", nameof(address));
 
     [SkipLocalsInit]
-    public static UInt256 GetUint256(this IList index)
-    {
-        Span<byte> indexSpan = stackalloc byte[32];
-        for (int i = 0; i < index.Count; i++)
-        {
-            indexSpan[i] = (byte)(int)index[i];
-        }
+    public static UInt256 GetUint256(this object index) => new(index.ToBytes());
 
-        return new UInt256(indexSpan);
-    }
-
-    public static dynamic ToScriptArray(this Array array, ScriptEngine engine) => engine.Script.Array.from(array);
+    public static ITypedArray<byte> ToScriptArray(this byte[] array)
+        => Engine.CurrentEngine?.CreateUint8Array(array) ?? throw new InvalidOperationException("No engine set");
 }

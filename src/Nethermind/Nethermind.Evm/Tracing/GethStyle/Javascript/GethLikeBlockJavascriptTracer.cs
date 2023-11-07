@@ -1,10 +1,7 @@
 ﻿// SPDX-FileCopyrightText: 2023 Demerzel Solutions Limited
 // SPDX-License-Identifier: LGPL-3.0-only
 
-using System.Numerics;
-using Microsoft.ClearScript.V8;
 using Nethermind.Core;
-using Nethermind.Core.Crypto;
 using Nethermind.Core.Specs;
 using Nethermind.State;
 
@@ -14,31 +11,37 @@ public class GethLikeBlockJavascriptTracer : BlockTracerBase<GethLikeTxTrace, Ge
 {
     private readonly IReleaseSpec _spec;
     private readonly GethTraceOptions _options;
-    private readonly GethJavascriptStyleCtx _ctx;
-    private readonly GethJavascriptStyleDb _db;
+    private readonly Context _ctx;
+    private readonly Db _db;
     private int _index;
 
     public GethLikeBlockJavascriptTracer(IWorldState worldState, IReleaseSpec spec, GethTraceOptions options) : base(options.TxHash)
     {
         _spec = spec;
         _options = options;
-        _ctx = new GethJavascriptStyleCtx();
-        _db = new GethJavascriptStyleDb(worldState);
+        _ctx = new Context();
+        _db = new Db(worldState);
     }
 
     public override void StartNewBlockTrace(Block block)
     {
         _ctx.block = block.Number;
-        // _ctx.blockHash = block.Hash
+        _ctx.BlockHash = block.Hash;
         base.StartNewBlockTrace(block);
     }
 
     protected override GethLikeJavascriptTxTracer OnStart(Transaction? tx)
     {
         _ctx.gasPrice = (ulong)tx!.GasPrice;
-        _ctx.intrinsicGas = IntrinsicGasCalculator.Calculate(tx, _spec);
-        _ctx.txIndex = _index++;
-        return new GethLikeJavascriptTxTracer(tx.Hash!, _db, _ctx, _spec, _options);
+        _ctx.TxHash = tx.Hash;
+        _ctx.txIndex = tx.Hash is not null ? _index++ : null;
+        return new GethLikeJavascriptTxTracer(new Engine(_spec), _db, _ctx, _options);
+    }
+
+    public override void EndBlockTrace()
+    {
+        base.EndBlockTrace();
+        Engine.CurrentEngine = null;
     }
 
     protected override bool ShouldTraceTx(Transaction? tx) => base.ShouldTraceTx(tx) && tx is not null;
