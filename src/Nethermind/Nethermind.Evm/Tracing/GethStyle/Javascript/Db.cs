@@ -22,18 +22,22 @@ public class Db
 
     public Db(IWorldState worldState) => WorldState = worldState;
 
-    public dynamic getBalance(object address) => WorldState.GetBalance(address.ToAddress()).ToBigInteger();
+    public IJavaScriptObject getBalance(object address) => WorldState.GetBalance(address.ToAddress()).ToBigInteger();
 
     public ulong getNonce(object address) => (ulong)WorldState.GetNonce(address.ToAddress());
 
     public ITypedArray<byte> getCode(object address) => WorldState.GetCode(address.ToAddress()).ToTypedScriptArray();
 
-    public ITypedArray<byte> getState(object address, object index)
+    public ITypedArray<byte> getState(object address, object hash)
     {
         byte[] array = ArrayPool<byte>.Shared.Rent(32);
         try
         {
-            byte[] bytes = WorldState.Get(new StorageCell(address.ToAddress(), index.GetUint256()));
+            byte[] bytes = WorldState.Get(new StorageCell(address.ToAddress(), hash.GetHash()));
+            if (bytes.Length < array.Length)
+            {
+                Array.Clear(array);
+            }
             bytes.CopyTo(array, array.Length - bytes.Length);
             return array.ToTypedScriptArray();
         }

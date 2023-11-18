@@ -4,7 +4,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Numerics;
 using FastEnumUtility;
 using Nethermind.Core;
 using Nethermind.Int256;
@@ -21,8 +20,9 @@ public sealed class GethLikeJavascriptTxTracer : GethLikeTxTracer
     private readonly Db _db;
     private readonly CallFrame _frame = new();
     private readonly FrameResult _result = new();
-    private int _depth;
     private bool _resultConstructed;
+    private Stack<long>? _frameGas;
+    private Stack<Log.Contract>? _contracts;
 
     // Context is updated only of first ReportAction call.
     private readonly Context _ctx;
@@ -58,7 +58,7 @@ public sealed class GethLikeJavascriptTxTracer : GethLikeTxTracer
     public override GethLikeTxTrace BuildResult()
     {
         GethLikeTxTrace result = base.BuildResult();
-        result.CustomTracerResult = _tracer.result(_ctx, _db);
+        result.CustomTracerResult = new GethLikeJavascriptTrace() { Value = _tracer.result(_ctx, _db) };
         _resultConstructed = true;
         return result;
     }
@@ -67,28 +67,34 @@ public sealed class GethLikeJavascriptTxTracer : GethLikeTxTracer
     {
         base.ReportAction(gas, value, from, to, input, callType, isPrecompileCall);
 
-        _log.contract = new Log.Contract(from, to, value, input);
+        bool isAnyCreate = callType.IsAnyCreate();
         if (callType == ExecutionType.TRANSACTION)
         {
-            _ctx.type = callType.IsAnyCreate() ? "CREATE" : "CALL";
+            _ctx.type = isAnyCreate ? "CREATE" : "CALL";
             _ctx.From = from;
             _ctx.To = to;
             _ctx.Input = input;
             _ctx.Value = value;
-            _ctx.gas = gas;
         }
         else if (_functions.HasFlag(TracerFunctions.enter))
         {
+            _contracts ??= new Stack<Log.Contract>();
+            _contracts.Push(_log.contract);
             _frame.From = from;
             _frame.To = to;
             _frame.Input = input;
-            _frame.Value = value;
+            _frame.Value = callType == ExecutionType.STATICCALL ? null : value;
             _frame.Gas = gas;
             _frame.Type = callType.FastToString();
             _tracer.enter(_frame);
+            _frameGas ??= new Stack<long>();
+            _frameGas.Push(gas);
         }
 
-        _depth++;
+        if (callType != ExecutionType.DELEGATECALL)
+        {
+            _log.contract = new Log.Contract(from, to, value, isAnyCreate ? null : input);
+        }
     }
 
     public override void StartOperation(int depth, long gas, Instruction opcode, int pc, bool isPostMerge = false)
@@ -98,11 +104,16 @@ public sealed class GethLikeJavascriptTxTracer : GethLikeTxTracer
         _log.gas = gas;
         _log.depth = depth;
         _log.error = null;
+        _log.gasCost = null;
     }
 
     public override void ReportOperationRemainingGas(long gas)
     {
-        // _log.gasCost = _log.gas - gas;
+        _log.gasCost ??= _log.gas - gas;
+        if (_functions.HasFlag(TracerFunctions.postStep))
+        {
+            _tracer.postStep(_log, _db);
+        }
     }
 
     public override void ReportOperationError(EvmExceptionType error)
@@ -134,10 +145,14 @@ public sealed class GethLikeJavascriptTxTracer : GethLikeTxTracer
 
     private void InvokeExit(long gas, ReadOnlyMemory<byte> output, string? error = null)
     {
-        _depth--;
-        if (_depth > 0 && _functions.HasFlag(TracerFunctions.exit))
+        if (_contracts?.TryPop(out Log.Contract contract) == true)
         {
-            _result.GasUsed = gas;
+            _log.contract = contract;
+        }
+
+        if (_functions.HasFlag(TracerFunctions.exit) && _frameGas?.Count > 0)
+        {
+            _result.GasUsed = _frameGas.Pop() - gas;
             _result.Output = output.ToArray();
             _result.Error = error;
             _tracer.exit(_result);
@@ -179,13 +194,13 @@ public sealed class GethLikeJavascriptTxTracer : GethLikeTxTracer
     public override void ReportRefund(long refund)
     {
         base.ReportRefund(refund);
-        _log.refund = refund;
+        _log.refund += refund;
     }
-
-    private const TracerFunctions Required = TracerFunctions.result;
 
     private TracerFunctions GetAvailableFunctions(ICollection<string> functions)
     {
+        const TracerFunctions required = TracerFunctions.result;
+
         TracerFunctions result = TracerFunctions.none;
 
         // skip none
@@ -196,7 +211,7 @@ public sealed class GethLikeJavascriptTxTracer : GethLikeTxTracer
             {
                 result |= function;
             }
-            else if (function <= Required)
+            else if (function <= required)
             {
                 throw new ArgumentException($"trace object must expose required function {name}");
             }
@@ -230,6 +245,7 @@ public sealed class GethLikeJavascriptTxTracer : GethLikeTxTracer
         enter = 4,
         exit = 8,
         step = 16,
-        setup = 32
+        postStep = 32,
+        setup = 64
     }
 }

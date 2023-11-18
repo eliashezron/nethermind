@@ -16,6 +16,8 @@ public class GethLikeTxTrace : IDisposable
         _disposable = disposable;
     }
 
+    public GethLikeTxTrace() { }
+
     public Stack<Dictionary<string, string>> StoragesByDepth { get; } = new();
 
     public long Gas { get; set; }
@@ -27,7 +29,7 @@ public class GethLikeTxTrace : IDisposable
     [JsonProperty(PropertyName = "structLogs")]
     public List<GethTxTraceEntry> Entries { get; set; } = new();
 
-    public object? CustomTracerResult { get; set; }
+    public GethLikeJavascriptTrace? CustomTracerResult { get; set; }
     public void Dispose()
     {
         _disposable?.Dispose();

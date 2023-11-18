@@ -5,9 +5,9 @@ using System;
 using System.Collections;
 using System.Linq;
 using System.Numerics;
-using System.Runtime.CompilerServices;
 using Microsoft.ClearScript.JavaScript;
 using Nethermind.Core;
+using Nethermind.Core.Crypto;
 using Nethermind.Core.Extensions;
 using Nethermind.Int256;
 
@@ -31,15 +31,7 @@ public static class JavascriptConverter
         _ => ListToWord(input)
     };
 
-    private static byte[] ListToWord(object input)
-    {
-        byte[] bytes = input.ToBytes();
-        return bytes.Length == EvmPooledMemory.WordSize
-            ? bytes
-            : bytes
-                .Concat(Enumerable.Repeat((byte)0, Math.Max(0, EvmPooledMemory.WordSize - bytes.Length)))
-                .Take(EvmPooledMemory.WordSize).ToArray();
-    }
+    private static byte[] ListToWord(object input) => input.ToBytes().PadLeft(EvmPooledMemory.WordSize);
 
     public static Address ToAddress(this object address) => address switch
     {
@@ -49,7 +41,7 @@ public static class JavascriptConverter
         _ => new Address(address.ToBytes())
     } ?? throw new ArgumentException("Not correct address", nameof(address));
 
-    public static UInt256 GetUint256(this object index) => new(index.ToBytes());
+    public static ValueHash256 GetHash(this object index) => new(index.ToBytes());
 
     private static Engine CurrentEngine => Engine.CurrentEngine ?? throw new InvalidOperationException("No engine set");
 
@@ -59,8 +51,8 @@ public static class JavascriptConverter
 
     public static IList ToUnTypedScriptArray(this byte[] array) => CurrentEngine.CreateUntypedArray(array);
 
-    public static dynamic ToBigInteger(this BigInteger bigInteger) => CurrentEngine.CreateBigInteger(bigInteger);
-    public static dynamic ToBigInteger(this UInt256 bigInteger) => CurrentEngine.CreateBigInteger((BigInteger)bigInteger);
+    public static IJavaScriptObject ToBigInteger(this BigInteger bigInteger) => CurrentEngine.CreateBigInteger(bigInteger);
+    public static IJavaScriptObject ToBigInteger(this UInt256 bigInteger) => CurrentEngine.CreateBigInteger((BigInteger)bigInteger);
 
 
 

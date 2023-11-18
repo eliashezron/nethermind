@@ -23,14 +23,14 @@ namespace Nethermind.Evm.Tracing.GethStyle.Javascript
         public long pc { get; set; }
 
         public long gas { get; set; }
-        public long gasCost { get; set; }
+        public long? gasCost { get; set; }
         public int depth { get; set; }
         public long refund { get; set; }
         public string? error { get; set; }
 
         public ulong getPC() => (ulong)pc;
         public ulong getGas() => (ulong)gas;
-        public ulong getCost() => (ulong)gasCost;
+        public ulong getCost() => (ulong)(gasCost ?? 0);
         public int getDepth() => depth;
         public ulong getRefund() => (ulong)refund;
         public dynamic getError() => !string.IsNullOrEmpty(error) ? error : Undefined.Value;
@@ -49,7 +49,7 @@ namespace Nethermind.Evm.Tracing.GethStyle.Javascript
             private readonly TraceStack _items;
             public Stack(TraceStack items) => _items = items;
             public int length() => _items.Count;
-            public dynamic peek(int index) => new BigInteger(_items[^(index + 1)].Span, true, true).ToBigInteger();
+            public IJavaScriptObject peek(int index) => new BigInteger(_items[^(index + 1)].Span, true, true).ToBigInteger();
         }
 
         public class Memory
@@ -71,22 +71,22 @@ namespace Nethermind.Evm.Tracing.GethStyle.Javascript
                     .ToTypedScriptArray();
             }
 
-            public dynamic getUint(int offset) => MemoryTrace.GetUint(offset).ToBigInteger();
+            public IJavaScriptObject getUint(int offset) => MemoryTrace.GetUint(offset).ToBigInteger();
         }
 
         public struct Contract
         {
             private readonly UInt256 _value;
             private readonly Address _address;
-            private readonly ReadOnlyMemory<byte> _input;
+            private readonly ReadOnlyMemory<byte>? _input;
             private ITypedArray<byte>? _callerConverted;
             private ITypedArray<byte>? _addressConverted;
             private ITypedArray<byte>? _inputConverted;
-            private dynamic? _valueConverted;
+            private IJavaScriptObject? _valueConverted;
             private readonly Address _caller;
 
 
-            public Contract(Address caller, Address address, UInt256 value, ReadOnlyMemory<byte> input)
+            public Contract(Address caller, Address address, UInt256 value, ReadOnlyMemory<byte>? input)
             {
                 _caller = caller;
                 _address = address;
@@ -96,8 +96,8 @@ namespace Nethermind.Evm.Tracing.GethStyle.Javascript
 
             public ITypedArray<byte> getAddress() => _addressConverted ??= _address.Bytes.ToTypedScriptArray();
             public ITypedArray<byte> getCaller() => _callerConverted ??= _caller.Bytes.ToTypedScriptArray();
-            public ITypedArray<byte> getInput() => _inputConverted ??= _input.ToArray().ToTypedScriptArray();
-            public dynamic getValue() => _valueConverted ??= _value.ToBigInteger();
+            public object getInput() => (_inputConverted ??= _input?.ToArray().ToTypedScriptArray()) ?? (object)Undefined.Value;
+            public IJavaScriptObject getValue() => _valueConverted ??= _value.ToBigInteger();
         }
     }
 }
